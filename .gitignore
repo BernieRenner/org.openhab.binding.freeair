@@ -1,0 +1,17 @@
+# Build output
+/target/
+*.log
+
+# IDEs
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+.classpath
+.project
+.settings/
+
+# OS cruft
+.DS_Store
+Thumbs.db

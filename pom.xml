@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+  <modelVersion>4.0.0</modelVersion>
+
+  <!-- Use any groupId you prefer -->
+  <groupId>org.openhab.addons.bundles</groupId>
+  <artifactId>org.openhab.binding.freeair</artifactId>
+  <version>${revision}</version>
+  <packaging>jar</packaging>
+  <name>openHAB Add-ons :: Bundles :: Freeair Binding</name>
+  <description>Standalone openHAB binding</description>
+
+  <licenses>
+    <license>
+      <name>Eclipse Public License 2.0</name>
+      <url>https://www.eclipse.org/legal/epl-2.0/</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+
+  <properties>
+    <!-- Default build: openHAB 5.1.x snapshot -->
+    <revision>5.1.0-SNAPSHOT</revision>
+    <oh.version>5.1.0-SNAPSHOT</oh.version>
+
+    <!-- Java & build -->
+    <maven.compiler.release>21</maven.compiler.release>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+    <!-- Plugin versions -->
+    <compiler.plugin.version>3.13.0</compiler.plugin.version>
+    <bnd.plugin.version>6.4.0</bnd.plugin.version>
+    <jar.plugin.version>3.4.2</jar.plugin.version>
+  </properties>
+
+  <!-- Build for openHAB 5.0.0: mvn -Poh50 -DskipTests clean install -->
+  <profiles>
+    <profile>
+      <id>oh50</id>
+      <properties>
+        <revision>5.0.0</revision>
+        <oh.version>5.0.0</oh.version>
+      </properties>
+    </profile>
+  </profiles>
+
+  <!-- openHAB artifacts live on JFrog; Central for misc deps -->
+  <repositories>
+    <repository>
+      <id>openhab-libs-release</id>
+      <url>https://openhab.jfrog.io/openhab/libs-release</url>
+    </repository>
+    <repository>
+      <id>openhab-libs-snapshot</id>
+      <url>https://openhab.jfrog.io/openhab/libs-snapshot</url>
+    </repository>
+    <repository>
+      <id>central</id>
+      <url>https://repo1.maven.org/maven2/</url>
+    </repository>
+  </repositories>
+
+  <!-- Keep all openHAB API versions aligned -->
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>org.openhab.core.bom</groupId>
+        <artifactId>org.openhab.core.bom.openhab-core</artifactId>
+        <version>${oh.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <dependencies>
+    <!-- openHAB APIs (provided at runtime by openHAB) -->
+    <dependency>
+      <groupId>org.openhab.core.bundles</groupId>
+      <artifactId>org.openhab.core.thing</artifactId>
+      <version>${oh.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.openhab.core.bundles</groupId>
+      <artifactId>org.openhab.core.config.core</artifactId>
+      <version>${oh.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.openhab.core.bundles</groupId>
+      <artifactId>org.openhab.core</artifactId>
+      <version>${oh.version}</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <!-- javax.measure for units -->
+    <dependency>
+      <groupId>javax.measure</groupId>
+      <artifactId>unit-api</artifactId>
+      <version>2.2</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>si.uom</groupId>
+      <artifactId>si-units</artifactId>
+      <version>2.1</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>tech.units</groupId>
+      <artifactId>indriya</artifactId>
+      <version>2.2</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <!-- Compile-only deps present in runtime -->
+    <dependency>
+      <groupId>org.eclipse.jdt</groupId>
+      <artifactId>org.eclipse.jdt.annotation</artifactId>
+      <version>2.2.700</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.osgi</groupId>
+      <artifactId>org.osgi.service.component.annotations</artifactId>
+      <version>1.5.1</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+      <version>2.0.13</version>
+      <scope>provided</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <!-- Java 21 -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>${compiler.plugin.version}</version>
+        <configuration>
+          <release>${maven.compiler.release}</release>
+          <showWarnings>true</showWarnings>
+          <showDeprecation>true</showDeprecation>
+        </configuration>
+      </plugin>
+
+      <!-- Generate proper OSGi manifest + DS from annotations -->
+      <plugin>
+        <groupId>biz.aQute.bnd</groupId>
+        <artifactId>bnd-maven-plugin</artifactId>
+        <version>${bnd.plugin.version}</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>bnd-process</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <!-- Inline bnd config; no external bnd.bnd needed -->
+          <bnd><![CDATA[
+Bundle-Name: Freeair Binding
+Bundle-SymbolicName: org.openhab.binding.freeair
+Bundle-Version: ${version}
+
+# Keep classes private by default
+Private-Package: org.openhab.binding.freeair.*
+
+# Generate DS from @Component etc.
+-dsannotations: *
+
+# Let bnd calculate imports
+Import-Package: *
+          ]]></bnd>
+        </configuration>
+      </plugin>
+
+      <!-- Exec plugin to run console test -->
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>3.1.0</version>
+        <configuration>
+          <mainClass>org.openhab.binding.freeair.internal.FreeairConsoleTest</mainClass>
+          <classpathScope>compile</classpathScope>
+          <includePluginDependencies>true</includePluginDependencies>
+        </configuration>
+        <dependencies>
+          <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <version>2.0.13</version>
+          </dependency>
+        </dependencies>
+      </plugin>
+
+      <!-- Package JAR using the manifest produced by Bnd -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <version>${jar.plugin.version}</version>
+        <configuration>
+          <archive>
+            <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
+          </archive>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+
+</project>

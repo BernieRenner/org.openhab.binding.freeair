@@ -1,0 +1,268 @@
+/*
+ * Copyright (c) 2010-2025 Contributors to the openHAB project
+ *
+ * See the NOTICE file(s) distributed with this work for additional
+ * information.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ */
+package org.openhab.binding.freeair.internal;
+
+import static org.openhab.binding.freeair.internal.FreeairBindingConstants.*;
+
+import java.io.IOException;
+import java.net.CookieManager;
+import java.net.CookiePolicy;
+import java.net.URI;
+import java.net.URLEncoder;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+
+import org.eclipse.jdt.annotation.NonNullByDefault;
+import org.eclipse.jdt.annotation.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * The {@link FreeairApiClient} handles communication with the FreeAir Connect cloud API.
+ *
+ * @author Bernie Renner - Initial contribution
+ */
+@NonNullByDefault
+public class FreeairApiClient {
+
+    private final Logger logger = LoggerFactory.getLogger(FreeairApiClient.class);
+
+    private final String serialNumber;
+    private final String password;
+    private final HttpClient httpClient;
+    private final FreeairDataParser dataParser;
+
+    private @Nullable FreeairDeviceData lastData;
+
+    public FreeairApiClient(String serialNumber, String password) {
+        this.serialNumber = serialNumber;
+        this.password = password;
+        this.dataParser = new FreeairDataParser(password);
+
+        // Create HTTP client with cookie support for session management
+        CookieManager cookieManager = new CookieManager();
+        cookieManager.setCookiePolicy(CookiePolicy.ACCEPT_ALL);
+
+        this.httpClient = HttpClient.newBuilder()
+                .cookieHandler(cookieManager)
+                .connectTimeout(Duration.ofSeconds(30))
+                .build();
+    }
+
+    /**
+     * Login to the FreeAir Connect API.
+     * This performs a two-step login: first sending the serial number, then the password.
+     */
+    public boolean login() throws FreeairCommunicationException {
+        try {
+            // Step 1: Send serial number
+            HttpRequest request1 = HttpRequest.newBuilder()
+                    .uri(URI.create(LOGIN_URL))
+                    .timeout(Duration.ofSeconds(30))
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .POST(HttpRequest.BodyPublishers.ofString(
+                            "serialnumber=" + URLEncoder.encode(serialNumber, StandardCharsets.UTF_8)))
+                    .build();
+
+            HttpResponse<String> response1 = httpClient.send(request1, HttpResponse.BodyHandlers.ofString());
+            logger.trace("Login step 1 response status: {}", response1.statusCode());
+            if (response1.statusCode() != 200) {
+                throw new FreeairCommunicationException(
+                        "Login step 1 failed with status: " + response1.statusCode());
+            }
+
+            // Step 2: Send password
+            HttpRequest request2 = HttpRequest.newBuilder()
+                    .uri(URI.create(LOGIN_URL))
+                    .timeout(Duration.ofSeconds(30))
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .POST(HttpRequest.BodyPublishers.ofString(
+                            "serial_password=" + URLEncoder.encode(password, StandardCharsets.UTF_8)))
+                    .build();
+
+            HttpResponse<String> response2 = httpClient.send(request2, HttpResponse.BodyHandlers.ofString());
+            logger.trace("Login step 2 response status: {}", response2.statusCode());
+            if (response2.statusCode() != 200) {
+                throw new FreeairCommunicationException(
+                        "Login step 2 failed with status: " + response2.statusCode());
+            }
+
+            logger.debug("Successfully logged in to FreeAir Connect for serial {}", serialNumber);
+            return true;
+        } catch (IOException | InterruptedException e) {
+            if (e instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            }
+            throw new FreeairCommunicationException("Login failed: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Fetch data from the FreeAir device.
+     * This will login first if necessary.
+     */
+    public @Nullable FreeairDeviceData fetchData() throws FreeairCommunicationException {
+        try {
+            // Login first
+            login();
+
+            // Fetch encrypted data
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(DATA_URL))
+                    .timeout(Duration.ofSeconds(30))
+                    .POST(HttpRequest.BodyPublishers.noBody())
+                    .build();
+
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+            if (response.statusCode() != 200) {
+                throw new FreeairCommunicationException(
+                        "Data fetch failed with status: " + response.statusCode());
+            }
+
+            String responseBody = response.body();
+            if (responseBody == null || responseBody.isEmpty()) {
+                throw new FreeairCommunicationException("No data received from device");
+            }
+
+            logger.trace("Response length: {} chars", responseBody.length());
+
+            // Parse the response
+            FreeairDeviceData data = dataParser.parse(responseBody);
+            if (data != null) {
+                lastData = data;
+
+                // Fetch error text if there's an error
+                int errorState = data.getErrorState();
+                if (errorState != 0 && errorState != 22) {
+                    fetchErrorText();
+                }
+            }
+
+            return data;
+        } catch (IOException | InterruptedException e) {
+            if (e instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            }
+            throw new FreeairCommunicationException("Data fetch failed: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Fetch error text from the API when device is in error state.
+     */
+    private void fetchErrorText() {
+        try {
+            String postData = "serObject=" + URLEncoder.encode(
+                    "err=1&serialnumber=" + serialNumber + "&device=1", StandardCharsets.UTF_8);
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(ERROR_URL))
+                    .timeout(Duration.ofSeconds(30))
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .POST(HttpRequest.BodyPublishers.ofString(postData))
+                    .build();
+
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+            if (response.statusCode() == 200) {
+                logger.debug("Error text response: {}", response.body());
+            }
+        } catch (IOException | InterruptedException e) {
+            if (e instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            }
+            logger.warn("Failed to fetch error text: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * Set the comfort level (1-5).
+     */
+    public void setComfortLevel(int comfortLevel) throws FreeairCommunicationException {
+        if (comfortLevel < 1 || comfortLevel > 5) {
+            throw new IllegalArgumentException("Comfort level must be between 1 and 5");
+        }
+
+        FreeairDeviceData data = lastData;
+        int operationMode = (data != null) ? data.getOperationMode() : 1;
+        if (operationMode == 0) {
+            operationMode = 1;
+        }
+
+        sendControlCommand(comfortLevel, operationMode);
+    }
+
+    /**
+     * Set the operation mode (1=comfort, 2=sleep, 3=turbo, 4=turbo_cool).
+     */
+    public void setOperationMode(int operationMode) throws FreeairCommunicationException {
+        if (operationMode < 1 || operationMode > 4) {
+            throw new IllegalArgumentException("Operation mode must be between 1 and 4");
+        }
+
+        FreeairDeviceData data = lastData;
+        int comfortLevel = (data != null) ? data.getComfortLevel() : 3;
+
+        sendControlCommand(comfortLevel, operationMode);
+    }
+
+    /**
+     * Send a control command to set comfort level and operation mode.
+     */
+    private void sendControlCommand(int comfortLevel, int operationMode) throws FreeairCommunicationException {
+        try {
+            // Login first
+            login();
+
+            StringBuilder postData = new StringBuilder();
+            postData.append("RB_CL=").append(comfortLevel);
+            postData.append("&RB_OM=").append(operationMode);
+            postData.append("&srn_button=").append(URLEncoder.encode(serialNumber + "-Test", StandardCharsets.UTF_8));
+            postData.append("&lang_button=en");
+            postData.append("&serial_password=");
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(CONTROL_URL))
+                    .timeout(Duration.ofSeconds(30))
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .POST(HttpRequest.BodyPublishers.ofString(postData.toString()))
+                    .build();
+
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+            if (response.statusCode() != 200) {
+                throw new FreeairCommunicationException(
+                        "Control command failed with status: " + response.statusCode());
+            }
+
+            logger.debug("Successfully sent control command: comfortLevel={}, operationMode={}",
+                    comfortLevel, operationMode);
+        } catch (IOException | InterruptedException e) {
+            if (e instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            }
+            throw new FreeairCommunicationException("Control command failed: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Get the last fetched data (may be null if never fetched or fetch failed).
+     */
+    public @Nullable FreeairDeviceData getLastData() {
+        return lastData;
+    }
+}

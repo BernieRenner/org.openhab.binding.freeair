@@ -1,0 +1,5 @@
+Bundle-Name: Freeair Binding
+Bundle-SymbolicName: org.openhab.binding.freeair
+Bundle-Version: 5.1.0.SNAPSHOT
+Private-Package: org.openhab.binding.freeair.*
+-dsannotations: *

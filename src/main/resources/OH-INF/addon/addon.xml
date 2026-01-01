@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<addon:addon id="freeair" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:addon="https://openhab.org/schemas/addon/v1.0.0"
+	xsi:schemaLocation="https://openhab.org/schemas/addon/v1.0.0 https://openhab.org/schemas/addon-1.0.0.xsd">
+
+	<type>binding</type>
+	<name>FreeAir Connect Binding</name>
+	<description>This binding integrates bluMartin FreeAir ventilation systems via the FreeAir Connect cloud service. It supports reading sensor data (temperature, humidity, CO2, air pressure), monitoring ventilation status (fan speeds, air flow, vent positions), filter status, and controlling comfort level and operation mode.</description>
+	<connection>cloud</connection>
+
+</addon:addon>

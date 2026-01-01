@@ -1,0 +1,399 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<thing:thing-descriptions bindingId="freeair"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:thing="https://openhab.org/schemas/thing-description/v1.0.0"
+	xsi:schemaLocation="https://openhab.org/schemas/thing-description/v1.0.0 https://openhab.org/schemas/thing-description-1.0.0.xsd">
+
+	<thing-type id="device">
+		<label>FreeAir Connect Device</label>
+		<description>FreeAir ventilation system connected via FreeAir Connect cloud</description>
+
+		<channel-groups>
+			<channel-group id="temperature" typeId="temperature-group"/>
+			<channel-group id="humidity" typeId="humidity-group"/>
+			<channel-group id="airQuality" typeId="air-quality-group"/>
+			<channel-group id="ventilation" typeId="ventilation-group"/>
+			<channel-group id="filter" typeId="filter-group"/>
+			<channel-group id="control" typeId="control-group"/>
+			<channel-group id="features" typeId="features-group"/>
+			<channel-group id="diagnostics" typeId="diagnostics-group"/>
+			<channel-group id="efficiency" typeId="efficiency-group"/>
+		</channel-groups>
+
+		<properties>
+			<property name="vendor">bluMartin</property>
+			<property name="model">freeAir</property>
+		</properties>
+
+		<representation-property>serialNumber</representation-property>
+
+		<config-description>
+			<parameter name="serialNumber" type="text" required="true">
+				<label>Serial Number</label>
+				<description>Serial number of the FreeAir device</description>
+			</parameter>
+			<parameter name="password" type="text" required="true">
+				<context>password</context>
+				<label>Password</label>
+				<description>Password for the FreeAir Connect account</description>
+			</parameter>
+			<parameter name="refreshInterval" type="integer" unit="s" min="60">
+				<label>Refresh Interval</label>
+				<description>Interval to poll data from the cloud in seconds</description>
+				<default>600</default>
+				<advanced>true</advanced>
+			</parameter>
+		</config-description>
+	</thing-type>
+
+	<!-- Channel Groups -->
+	<channel-group-type id="temperature-group">
+		<label>Temperature</label>
+		<description>Temperature sensors</description>
+		<channels>
+			<channel id="tempOutdoor" typeId="temperature">
+				<label>Outdoor Temperature</label>
+				<description>Outdoor air temperature</description>
+			</channel>
+			<channel id="tempSupply" typeId="temperature">
+				<label>Supply Temperature</label>
+				<description>Supply air temperature</description>
+			</channel>
+			<channel id="tempExtract" typeId="temperature">
+				<label>Extract Temperature</label>
+				<description>Extract air temperature</description>
+			</channel>
+			<channel id="tempExhaust" typeId="temperature">
+				<label>Exhaust Temperature</label>
+				<description>Exhaust air temperature</description>
+			</channel>
+			<channel id="tempVirtSupExit" typeId="temperature">
+				<label>Virtual Supply Exit Temperature</label>
+				<description>Virtual supply exit temperature</description>
+			</channel>
+		</channels>
+	</channel-group-type>
+
+	<channel-group-type id="humidity-group">
+		<label>Humidity</label>
+		<description>Humidity sensors</description>
+		<channels>
+			<channel id="humidityOutdoor" typeId="humidity">
+				<label>Outdoor Humidity</label>
+				<description>Outdoor relative humidity</description>
+			</channel>
+			<channel id="humidityExtract" typeId="humidity">
+				<label>Extract Humidity</label>
+				<description>Extract air relative humidity</description>
+			</channel>
+		</channels>
+	</channel-group-type>
+
+	<channel-group-type id="air-quality-group">
+		<label>Air Quality</label>
+		<description>Air quality sensors</description>
+		<channels>
+			<channel id="co2Extract" typeId="co2">
+				<label>CO2 Extract</label>
+				<description>CO2 level in extract air</description>
+			</channel>
+			<channel id="airPressure" typeId="pressure">
+				<label>Air Pressure</label>
+				<description>Atmospheric pressure</description>
+			</channel>
+		</channels>
+	</channel-group-type>
+
+	<channel-group-type id="ventilation-group">
+		<label>Ventilation</label>
+		<description>Ventilation and fan data</description>
+		<channels>
+			<channel id="fanSpeed" typeId="fan-speed-level">
+				<label>Fan Speed Level</label>
+				<description>Current fan speed level (0-10)</description>
+			</channel>
+			<channel id="fanSpeedSupply" typeId="fan-speed-rpm">
+				<label>Supply Fan Speed</label>
+				<description>Supply fan speed in RPM</description>
+			</channel>
+			<channel id="fanSpeedExtract" typeId="fan-speed-rpm">
+				<label>Extract Fan Speed</label>
+				<description>Extract fan speed in RPM</description>
+			</channel>
+			<channel id="airFlow" typeId="air-flow">
+				<label>Air Flow</label>
+				<description>Current air flow</description>
+			</channel>
+			<channel id="airFlowAvg" typeId="air-flow">
+				<label>Average Air Flow</label>
+				<description>Average air flow</description>
+			</channel>
+			<channel id="ventPosExtract" typeId="vent-position">
+				<label>Extract Vent Position</label>
+				<description>Extract vent position (0-31)</description>
+			</channel>
+			<channel id="ventPosBath" typeId="vent-position">
+				<label>Bath Vent Position</label>
+				<description>Bathroom vent position (0-31)</description>
+			</channel>
+			<channel id="ventPosSupply" typeId="vent-position">
+				<label>Supply Vent Position</label>
+				<description>Supply vent position (0-31)</description>
+			</channel>
+			<channel id="ventPosBypass" typeId="vent-position">
+				<label>Bypass Vent Position</label>
+				<description>Bypass vent position (0-31)</description>
+			</channel>
+		</channels>
+	</channel-group-type>
+
+	<channel-group-type id="filter-group">
+		<label>Filter</label>
+		<description>Filter status</description>
+		<channels>
+			<channel id="filterSupplyFull" typeId="filter-full">
+				<label>Supply Filter Full</label>
+				<description>Supply filter is full</description>
+			</channel>
+			<channel id="filterExtractFull" typeId="filter-full">
+				<label>Extract Filter Full</label>
+				<description>Extract filter is full</description>
+			</channel>
+			<channel id="filterStatusSupply" typeId="filter-status">
+				<label>Supply Filter Status</label>
+				<description>Supply filter status (0-4 scale)</description>
+			</channel>
+			<channel id="filterStatusExtract" typeId="filter-status">
+				<label>Extract Filter Status</label>
+				<description>Extract filter status (0-4 scale)</description>
+			</channel>
+			<channel id="filterHours" typeId="operating-hours">
+				<label>Filter Hours</label>
+				<description>Filter operating hours</description>
+			</channel>
+		</channels>
+	</channel-group-type>
+
+	<channel-group-type id="control-group">
+		<label>Control</label>
+		<description>Device control</description>
+		<channels>
+			<channel id="comfortLevel" typeId="comfort-level">
+				<label>Comfort Level</label>
+				<description>Comfort level setting (1-5)</description>
+			</channel>
+			<channel id="operationMode" typeId="operation-mode">
+				<label>Operation Mode</label>
+				<description>Current operation mode</description>
+			</channel>
+			<channel id="controlAuto" typeId="control-auto">
+				<label>Auto Control Mode</label>
+				<description>Current automatic control mode</description>
+			</channel>
+		</channels>
+	</channel-group-type>
+
+	<channel-group-type id="features-group">
+		<label>Features</label>
+		<description>Feature status</description>
+		<channels>
+			<channel id="humidityReductionMode" typeId="feature-switch">
+				<label>Humidity Reduction Mode</label>
+				<description>Humidity reduction mode is active</description>
+			</channel>
+			<channel id="summerCooling" typeId="feature-switch">
+				<label>Summer Cooling</label>
+				<description>Summer cooling is active</description>
+			</channel>
+			<channel id="deicing" typeId="feature-switch">
+				<label>Deicing</label>
+				<description>Deicing/defrost is active</description>
+			</channel>
+		</channels>
+	</channel-group-type>
+
+	<channel-group-type id="diagnostics-group">
+		<label>Diagnostics</label>
+		<description>Diagnostic information</description>
+		<channels>
+			<channel id="errorState" typeId="error-state">
+				<label>Error State</label>
+				<description>Device error state code</description>
+			</channel>
+			<channel id="operatingHours" typeId="operating-hours">
+				<label>Operating Hours</label>
+				<description>Total operating hours</description>
+			</channel>
+			<channel id="rssi" typeId="rssi">
+				<label>Signal Strength</label>
+				<description>Wireless signal strength</description>
+			</channel>
+		</channels>
+	</channel-group-type>
+
+	<channel-group-type id="efficiency-group">
+		<label>Efficiency</label>
+		<description>Efficiency metrics</description>
+		<channels>
+			<channel id="energySavings" typeId="energy-savings">
+				<label>Energy Savings</label>
+				<description>Calculated energy savings</description>
+			</channel>
+			<channel id="heatRecovery" typeId="heat-recovery">
+				<label>Heat Recovery</label>
+				<description>Heat recovery efficiency</description>
+			</channel>
+		</channels>
+	</channel-group-type>
+
+	<!-- Channel Types -->
+	<channel-type id="temperature">
+		<item-type>Number:Temperature</item-type>
+		<label>Temperature</label>
+		<category>Temperature</category>
+		<state readOnly="true" pattern="%.1f %unit%"/>
+	</channel-type>
+
+	<channel-type id="humidity">
+		<item-type>Number:Dimensionless</item-type>
+		<label>Humidity</label>
+		<category>Humidity</category>
+		<state readOnly="true" pattern="%.0f %%"/>
+	</channel-type>
+
+	<channel-type id="co2">
+		<item-type>Number:Dimensionless</item-type>
+		<label>CO2</label>
+		<category>CarbonDioxide</category>
+		<state readOnly="true" pattern="%.0f ppm"/>
+	</channel-type>
+
+	<channel-type id="pressure">
+		<item-type>Number:Pressure</item-type>
+		<label>Pressure</label>
+		<category>Pressure</category>
+		<state readOnly="true" pattern="%.0f hPa"/>
+	</channel-type>
+
+	<channel-type id="fan-speed-level">
+		<item-type>Number</item-type>
+		<label>Fan Speed Level</label>
+		<category>Fan</category>
+		<state readOnly="true" min="0" max="10"/>
+	</channel-type>
+
+	<channel-type id="fan-speed-rpm">
+		<item-type>Number</item-type>
+		<label>Fan Speed</label>
+		<category>Fan</category>
+		<state readOnly="true" pattern="%.0f rpm"/>
+	</channel-type>
+
+	<channel-type id="air-flow">
+		<item-type>Number</item-type>
+		<label>Air Flow</label>
+		<category>Flow</category>
+		<state readOnly="true" pattern="%.0f m³/h"/>
+	</channel-type>
+
+	<channel-type id="vent-position">
+		<item-type>Number</item-type>
+		<label>Vent Position</label>
+		<state readOnly="true" min="0" max="31"/>
+	</channel-type>
+
+	<channel-type id="filter-full">
+		<item-type>Switch</item-type>
+		<label>Filter Full</label>
+		<category>Alarm</category>
+		<state readOnly="true"/>
+	</channel-type>
+
+	<channel-type id="filter-status">
+		<item-type>Number</item-type>
+		<label>Filter Status</label>
+		<description>Filter condition (0=empty, 4=full)</description>
+		<state readOnly="true" min="0" max="4"/>
+	</channel-type>
+
+	<channel-type id="comfort-level">
+		<item-type>Number</item-type>
+		<label>Comfort Level</label>
+		<category>Heating</category>
+		<state min="1" max="5" step="1"/>
+	</channel-type>
+
+	<channel-type id="operation-mode">
+		<item-type>String</item-type>
+		<label>Operation Mode</label>
+		<category>Settings</category>
+		<state>
+			<options>
+				<option value="comfort">Comfort</option>
+				<option value="sleep">Sleep</option>
+				<option value="turbo">Turbo</option>
+				<option value="turbo_cool">Turbo Cool</option>
+			</options>
+		</state>
+	</channel-type>
+
+	<channel-type id="control-auto">
+		<item-type>String</item-type>
+		<label>Auto Control Mode</label>
+		<category>Settings</category>
+		<state readOnly="true">
+			<options>
+				<option value="min_ventilation">Minimum Ventilation</option>
+				<option value="humidity_reduction_rel">Humidity Reduction (rel)</option>
+				<option value="humidity_reduction_abs">Humidity Reduction (abs)</option>
+				<option value="active_cooling">Active Cooling</option>
+				<option value="co2_reduction">CO2 Reduction</option>
+				<option value="water_insertion">Water Insertion</option>
+				<option value="outdoor_temp_lt_22_degc">Outdoor Temp &lt; -22°C</option>
+				<option value="humidity_input">Humidity Input</option>
+			</options>
+		</state>
+	</channel-type>
+
+	<channel-type id="feature-switch">
+		<item-type>Switch</item-type>
+		<label>Feature</label>
+		<state readOnly="true"/>
+	</channel-type>
+
+	<channel-type id="error-state">
+		<item-type>Number</item-type>
+		<label>Error State</label>
+		<category>Error</category>
+		<state readOnly="true"/>
+	</channel-type>
+
+	<channel-type id="operating-hours">
+		<item-type>Number:Time</item-type>
+		<label>Operating Hours</label>
+		<category>Time</category>
+		<state readOnly="true" pattern="%.0f h"/>
+	</channel-type>
+
+	<channel-type id="rssi">
+		<item-type>Number:Power</item-type>
+		<label>Signal Strength</label>
+		<category>QualityOfService</category>
+		<state readOnly="true" pattern="%.0f dBm"/>
+	</channel-type>
+
+	<channel-type id="energy-savings">
+		<item-type>Number:Power</item-type>
+		<label>Energy Savings</label>
+		<category>Energy</category>
+		<state readOnly="true" pattern="%.0f W"/>
+	</channel-type>
+
+	<channel-type id="heat-recovery">
+		<item-type>Number:Dimensionless</item-type>
+		<label>Heat Recovery</label>
+		<category>Energy</category>
+		<state readOnly="true" pattern="%.0f %%"/>
+	</channel-type>
+
+</thing:thing-descriptions>
