@@ -15,7 +15,8 @@ package org.openhab.binding.freeair.internal;
 /**
  * Console test application for FreeAir Connect API.
  *
- * Run with: mvn exec:java -Dexec.mainClass="org.openhab.binding.freeair.internal.FreeairConsoleTest" -Dexec.args="SERIAL PASSWORD"
+ * Run with: mvn exec:java -Dexec.mainClass="org.openhab.binding.freeair.internal.FreeairConsoleTest"
+ * -Dexec.args="SERIAL PASSWORD"
  * Or compile and run directly.
  *
  * @author Bernie Renner - Initial contribution
@@ -34,6 +35,7 @@ public class FreeairConsoleTest {
 
         System.out.println("===========================================");
         System.out.println("FreeAir Connect API Test");
+        System.out.println("openHAB Binding Channel Reference");
         System.out.println("===========================================");
         System.out.println("Serial Number: " + serialNumber);
         System.out.println("Password: " + "*".repeat(password.length()));
@@ -52,69 +54,81 @@ public class FreeairConsoleTest {
                 System.exit(1);
             }
 
-            printSection("Device Info");
-            printValue("Firmware Version", data.getVersion());
-            printValue("FA100 Version", data.getVersionFa100());
-            printValue("Board Version", data.getBoardVersion());
+            // Thing Properties
+            printSection("Thing Properties");
+            printProperty("firmwareVersion", data.getVersion());
+            printProperty("versionFa100", data.getVersionFa100());
+            printProperty("boardVersion", String.valueOf(data.getBoardVersion()));
             printValue("Timestamp", data.getTimestamp());
 
-            printSection("Temperature Sensors");
-            printValue("Outdoor", formatTemp(data.getTempOutdoor()));
-            printValue("Supply", formatTemp(data.getTempSupply()));
-            printValue("Extract", formatTemp(data.getTempExtract()));
-            printValue("Exhaust", formatTemp(data.getTempExhaust()));
-            printValue("Virtual Supply Exit", formatTemp(data.getTempVirtSupExit()));
+            // Channel Group: temperature
+            printChannelGroup("temperature");
+            printChannel("tempOutdoor", formatTemp(data.getTempOutdoor()), "Number:Temperature");
+            printChannel("tempSupply", formatTemp(data.getTempSupply()), "Number:Temperature");
+            printChannel("tempExtract", formatTemp(data.getTempExtract()), "Number:Temperature");
+            printChannel("tempExhaust", formatTemp(data.getTempExhaust()), "Number:Temperature");
+            printChannel("tempVirtSupExit", formatTemp(data.getTempVirtSupExit()), "Number:Temperature");
 
-            printSection("Humidity Sensors");
-            printValue("Outdoor", data.getHumidityOutdoor() + " %");
-            printValue("Extract", data.getHumidityExtract() + " %");
+            // Channel Group: humidity
+            printChannelGroup("humidity");
+            printChannel("humidityOutdoor", data.getHumidityOutdoor() + " %", "Number:Dimensionless");
+            printChannel("humidityExtract", data.getHumidityExtract() + " %", "Number:Dimensionless");
 
-            printSection("Air Quality");
-            printValue("CO2 Extract", data.getCo2Extract() + " ppm");
-            printValue("Air Pressure", data.getAirPressure() + " hPa");
+            // Channel Group: airQuality
+            printChannelGroup("airQuality");
+            printChannel("co2Extract", data.getCo2Extract() + " ppm", "Number:Dimensionless");
+            printChannel("airPressure", data.getAirPressure() + " hPa", "Number:Pressure");
 
-            printSection("Ventilation");
-            printValue("Fan Speed Level", data.getFanSpeed() + " (0-10)");
-            printValue("Supply Fan RPM", data.getFanSpeedSupply() + " rpm");
-            printValue("Extract Fan RPM", data.getFanSpeedExtract() + " rpm");
-            printValue("Air Flow", data.getAirFlow() + " m³/h");
-            printValue("Air Flow Avg", data.getAirFlowAvg() + " m³/h");
+            // Channel Group: ventilation
+            printChannelGroup("ventilation");
+            printChannel("fanSpeed", data.getFanSpeed() + " (level 0-10)", "Number");
+            printChannel("fanSpeedSupply", data.getFanSpeedSupply() + " rpm", "Number");
+            printChannel("fanSpeedExtract", data.getFanSpeedExtract() + " rpm", "Number");
+            printChannel("airFlow", data.getAirFlow() + " m³/h", "Number");
+            printChannel("airFlowAvg", data.getAirFlowAvg() + " m³/h", "Number");
+            printChannel("ventPosExtract", data.getVentPosExtract() + " (0-31)", "Number");
+            printChannel("ventPosBath", data.getVentPosBath() + " (0-31)", "Number");
+            printChannel("ventPosSupply", data.getVentPosSupply() + " (0-31)", "Number");
+            printChannel("ventPosBypass", data.getVentPosBypass() + " (0-31)", "Number");
 
-            printSection("Vent Positions (0-31)");
-            printValue("Extract", String.valueOf(data.getVentPosExtract()));
-            printValue("Bath", String.valueOf(data.getVentPosBath()));
-            printValue("Supply", String.valueOf(data.getVentPosSupply()));
-            printValue("Bypass", String.valueOf(data.getVentPosBypass()));
+            // Channel Group: filter
+            printChannelGroup("filter");
+            printChannel("filterSupplyFull", data.isFilterSupplyFull() ? "ON" : "OFF", "Switch");
+            printChannel("filterExtractFull", data.isFilterExtractFull() ? "ON" : "OFF", "Switch");
+            printChannel("filterStatusSupply", formatFilterStatus(data.getFilterStatusSupply()), "Number");
+            printChannel("filterStatusExtract", formatFilterStatus(data.getFilterStatusExtract()), "Number");
+            printChannel("filterHours", data.getFilterHours() + " h", "Number:Time");
 
-            printSection("Filter Status");
-            printValue("Supply Filter Full", data.isFilterSupplyFull() ? "YES" : "No");
-            printValue("Extract Filter Full", data.isFilterExtractFull() ? "YES" : "No");
-            printValue("Supply Filter Status", formatFilterStatus(data.getFilterStatusSupply()));
-            printValue("Extract Filter Status", formatFilterStatus(data.getFilterStatusExtract()));
-            printValue("Filter Hours", data.getFilterHours() + " h");
+            // Channel Group: control
+            printChannelGroup("control");
+            printChannel("comfortLevel", data.getComfortLevel() + " (1-5)", "Number");
+            printChannel("operationMode",
+                    data.getOperationModeString() + " (code: " + data.getOperationMode() + ")", "String");
+            printChannel("controlAuto", data.getControlAutoString() + " (code: " + data.getControlAuto() + ")",
+                    "String");
 
-            printSection("Control");
-            printValue("Comfort Level", data.getComfortLevel() + " (1-5)");
-            printValue("Operation Mode", data.getOperationModeString() + " (" + data.getOperationMode() + ")");
-            printValue("Control Auto", data.getControlAutoString() + " (" + data.getControlAuto() + ")");
+            // Channel Group: features
+            printChannelGroup("features");
+            printChannel("humidityReductionMode", data.isHumidityReductionMode() ? "ON" : "OFF", "Switch");
+            printChannel("summerCooling", data.isSummerCooling() ? "ON" : "OFF", "Switch");
+            printChannel("deicing", data.isDeicing() ? "ON" : "OFF", "Switch");
 
-            printSection("Features");
-            printValue("Humidity Reduction", data.isHumidityReductionMode() ? "ON" : "Off");
-            printValue("Summer Cooling", data.isSummerCooling() ? "ON" : "Off");
-            printValue("Deicing", data.isDeicing() ? "ON" : "Off");
+            // Channel Group: diagnostics
+            printChannelGroup("diagnostics");
+            printChannel("errorState", data.getErrorState() + (data.getErrorState() == 0 ? " (OK)" : " (ERROR!)"),
+                    "Number");
+            printChannel("operatingHours", data.getOperatingHours() + " h", "Number:Time");
+            printChannel("rssi", data.getRssi() + " dBm", "Number:Power");
 
-            printSection("Diagnostics");
-            printValue("Error State", data.getErrorState() + (data.getErrorState() == 0 ? " (OK)" : " (ERROR!)"));
-            printValue("Operating Hours", data.getOperatingHours() + " h");
-            printValue("RSSI", data.getRssi() + " dBm");
-
-            printSection("Efficiency");
-            printValue("Energy Savings", data.getEnergySavings() + " W");
-            printValue("Heat Recovery", data.getHeatRecovery() + " %");
+            // Channel Group: efficiency
+            printChannelGroup("efficiency");
+            printChannel("energySavings", data.getEnergySavings() + " W", "Number:Power");
+            printChannel("heatRecovery", data.getHeatRecovery() + " %", "Number:Dimensionless");
 
             System.out.println();
             System.out.println("===========================================");
             System.out.println("Test completed successfully!");
+            System.out.println("Total Channels: 25");
             System.out.println("===========================================");
 
         } catch (FreeairCommunicationException e) {
@@ -135,15 +149,24 @@ public class FreeairConsoleTest {
 
     private static void printSection(String title) {
         System.out.println();
-        System.out.println("--- " + title + " ---");
+        System.out.println("### " + title + " ###");
+    }
+
+    private static void printChannelGroup(String groupName) {
+        System.out.println();
+        System.out.println("--- Channel Group: " + groupName + " ---");
+    }
+
+    private static void printChannel(String channelId, String value, String itemType) {
+        System.out.printf("  %-25s %-25s [%s]%n", channelId + ":", value, itemType);
     }
 
     private static void printValue(String label, String value) {
         System.out.printf("  %-25s %s%n", label + ":", value);
     }
 
-    private static void printValue(String label, int value) {
-        printValue(label, String.valueOf(value));
+    private static void printProperty(String name, String value) {
+        System.out.printf("  %-25s %s%n", name + ":", value);
     }
 
     private static String formatTemp(double temp) {
@@ -154,7 +177,7 @@ public class FreeairConsoleTest {
         if (status == null) {
             return "N/A";
         }
-        String[] labels = {"Empty", "Low", "Medium", "High", "Full"};
+        String[] labels = { "Empty", "Low", "Medium", "High", "Full" };
         return status + "/4 (" + (status < labels.length ? labels[status] : "?") + ")";
     }
 }

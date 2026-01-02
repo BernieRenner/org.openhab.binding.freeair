@@ -46,6 +46,7 @@ public class FreeairApiClient {
     private final FreeairDataParser dataParser;
 
     private @Nullable FreeairDeviceData lastData;
+    private boolean loggedIn = false;
 
     public FreeairApiClient(String serialNumber, String password) {
         this.serialNumber = serialNumber;
@@ -80,6 +81,7 @@ public class FreeairApiClient {
             HttpResponse<String> response1 = httpClient.send(request1, HttpResponse.BodyHandlers.ofString());
             logger.trace("Login step 1 response status: {}", response1.statusCode());
             if (response1.statusCode() != 200) {
+                loggedIn = false;
                 throw new FreeairCommunicationException(
                         "Login step 1 failed with status: " + response1.statusCode());
             }
@@ -96,13 +98,29 @@ public class FreeairApiClient {
             HttpResponse<String> response2 = httpClient.send(request2, HttpResponse.BodyHandlers.ofString());
             logger.trace("Login step 2 response status: {}", response2.statusCode());
             if (response2.statusCode() != 200) {
+                loggedIn = false;
                 throw new FreeairCommunicationException(
                         "Login step 2 failed with status: " + response2.statusCode());
             }
 
+            // Verify login success by checking response content for specific error messages
+            String responseBody = response2.body();
+            if (responseBody != null) {
+                String lowerBody = responseBody.toLowerCase();
+                // Check for specific login failure indicators
+                if (lowerBody.contains("wrong password") || lowerBody.contains("invalid password")
+                        || lowerBody.contains("falsches passwort") || lowerBody.contains("login failed")
+                        || lowerBody.contains("authentication failed")) {
+                    loggedIn = false;
+                    throw new FreeairCommunicationException("Login failed: invalid credentials");
+                }
+            }
+
+            loggedIn = true;
             logger.debug("Successfully logged in to FreeAir Connect for serial {}", serialNumber);
             return true;
         } catch (IOException | InterruptedException e) {
+            loggedIn = false;
             if (e instanceof InterruptedException) {
                 Thread.currentThread().interrupt();
             }
@@ -111,13 +129,29 @@ public class FreeairApiClient {
     }
 
     /**
+     * Ensure we are logged in, performing login if necessary.
+     */
+    private void ensureLoggedIn() throws FreeairCommunicationException {
+        if (!loggedIn) {
+            login();
+        }
+    }
+
+    /**
+     * Invalidate the current session, forcing a new login on next request.
+     */
+    public void invalidateSession() {
+        loggedIn = false;
+    }
+
+    /**
      * Fetch data from the FreeAir device.
      * This will login first if necessary.
      */
     public @Nullable FreeairDeviceData fetchData() throws FreeairCommunicationException {
         try {
-            // Login first
-            login();
+            // Ensure we are logged in (only logs in if needed)
+            ensureLoggedIn();
 
             // Fetch encrypted data
             HttpRequest request = HttpRequest.newBuilder()
@@ -128,13 +162,23 @@ public class FreeairApiClient {
 
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
+            // Handle session expiry - retry with fresh login
+            if (response.statusCode() == 401 || response.statusCode() == 403) {
+                logger.debug("Session expired, re-authenticating...");
+                loggedIn = false;
+                ensureLoggedIn();
+                response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            }
+
             if (response.statusCode() != 200) {
+                loggedIn = false;
                 throw new FreeairCommunicationException(
                         "Data fetch failed with status: " + response.statusCode());
             }
 
             String responseBody = response.body();
             if (responseBody == null || responseBody.isEmpty()) {
+                loggedIn = false;
                 throw new FreeairCommunicationException("No data received from device");
             }
 
@@ -154,6 +198,7 @@ public class FreeairApiClient {
 
             return data;
         } catch (IOException | InterruptedException e) {
+            loggedIn = false;
             if (e instanceof InterruptedException) {
                 Thread.currentThread().interrupt();
             }
@@ -225,8 +270,8 @@ public class FreeairApiClient {
      */
     private void sendControlCommand(int comfortLevel, int operationMode) throws FreeairCommunicationException {
         try {
-            // Login first
-            login();
+            // Ensure we are logged in (only logs in if needed)
+            ensureLoggedIn();
 
             StringBuilder postData = new StringBuilder();
             postData.append("RB_CL=").append(comfortLevel);

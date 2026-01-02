@@ -124,11 +124,18 @@ public class FreeairHandler extends BaseThingHandler {
         updateStatus(ThingStatus.UNKNOWN);
 
         // Start background initialization and polling
-        scheduler.execute(() -> {
-            if (pollDevice()) {
-                startPolling();
-            }
-        });
+        scheduler.execute(this::initializeAndStartPolling);
+    }
+
+    private void initializeAndStartPolling() {
+        if (pollDevice()) {
+            startPolling();
+        } else {
+            // First poll failed, schedule a retry after 30 seconds
+            int retryDelay = 30;
+            logger.debug("Initial connection failed, scheduling retry in {} seconds", retryDelay);
+            scheduler.schedule(this::initializeAndStartPolling, retryDelay, TimeUnit.SECONDS);
+        }
     }
 
     @Override
