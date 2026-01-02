@@ -208,7 +208,7 @@ public class FreeairDataParser {
         int pressure5MSB = getLowBits(data[39] & 0xFF, 5);
         int pressure4LSB = getLowBits(data[34] & 0xFF, 4);
         int pressureRaw = (pressure5MSB << 4) | pressure4LSB;
-        deviceData.setAirPressure(700 + 2 * pressureRaw);
+        deviceData.setAirPressure(700 + pressureRaw);
 
         // Control values - extracted from middle bits
         // ComfortLevel: bits 4-6 (3 bits) of byte[29]
