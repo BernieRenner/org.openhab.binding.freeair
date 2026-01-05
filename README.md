@@ -1,159 +1,271 @@
-# FreeAir Connect Binding
+# FreeAir Binding
 
-This binding connects bluMartin FreeAir ventilation systems through the FreeAir Connect cloud service.
-It reads temperatures, humidity, CO2, pressure, ventilation details, filter status, feature flags, diagnostics, and efficiency metrics, and lets you set comfort level and operation mode.
+This binding integrates bluMartin FreeAir ventilation systems with openHAB via the FreeAir Connect cloud service.
+It allows monitoring of temperatures, humidity, CO2, air pressure, fan speeds, filter status, and control of ventilation modes.
 
-## Features
-- Cloud connection to `https://www.freeair-connect.de/` using the device serial number and password.
-- Configurable polling interval (default 600 seconds) with automatic channel updates.
-- Channel groups for temperature, humidity, air quality, ventilation, filter, control, features, diagnostics, and efficiency.
-- Command support for comfort level (1-5) and operation mode (comfort, sleep, turbo, turbo_cool).
+## Prerequisites
 
-## Requirements
-- Active FreeAir Connect account.
-- FreeAir device serial number and password (same credentials used in the FreeAir Connect web UI).
-- Internet connectivity from the openHAB host to the FreeAir Connect endpoints.
+### FreeAir Connect Registration
+
+Your freeAir 100 device must be registered at [https://www.freeair-connect.de](https://www.freeair-connect.de) before using this binding.
+The serial number and password from your FreeAir Connect account are required to configure the binding.
+
+### Java Cryptography Extension (JCE) Unlimited Strength Policy
+
+**Important:** FreeAir devices with firmware version 2.14 and higher use AES-256 encryption.
+Java requires the unlimited strength cryptography policy to be enabled for AES-256 to work.
+
+#### Docker Installation
+
+If running openHAB in Docker, set the environment variable:
+
+```
+CRYPTO_POLICY=unlimited
+```
+
+Example docker-compose.yml:
+
+```yaml
+services:
+  openhab:
+    image: openhab/openhab:latest
+    environment:
+      - CRYPTO_POLICY=unlimited
+```
+
+#### Manual/Package Installation
+
+For Java 8u161+ and Java 11+, unlimited cryptography is enabled by default.
+If you encounter "Illegal key size" errors, edit `$JAVA_HOME/conf/security/java.security` and ensure:
+
+```
+crypto.policy=unlimited
+```
 
 ## Supported Things
-- `freeair:device` - a FreeAir ventilation unit reached via the cloud API.
+
+- `device`: FreeAir ventilation device connected via FreeAir Connect cloud
+
+Tested with firmware versions:
+
+- 2.9.0 (AES-128 encryption)
+- 2.14.0 (AES-256 encryption)
+- 2.22.0 (AES-256 encryption)
 
 ## Discovery
-Auto-discovery is not available.
-Create the thing manually.
+
+Auto-discovery is not supported.
+Devices must be configured manually using the serial number and password from your FreeAir Connect account.
 
 ## Thing Configuration
 
-| Parameter       | Type            | Required | Description                                                         |
-|-----------------|-----------------|----------|---------------------------------------------------------------------|
-| serialNumber    | text            | yes      | Device serial number shown in FreeAir Connect.                      |
-| password        | text            | yes      | FreeAir Connect password for the device.                            |
-| refreshInterval | integer (s)     | no       | Polling interval in seconds (default 600); avoid very low values.   |
+| Name            | Type    | Description                                  | Default | Required |
+|-----------------|---------|----------------------------------------------|---------|----------|
+| serialNumber    | text    | Serial number of the FreeAir device          | N/A     | yes      |
+| password        | text    | Password for the FreeAir Connect account     | N/A     | yes      |
+| refreshInterval | integer | Interval to poll data from the cloud (sec)   | 600     | no       |
 
 ## Channels
 
-**Temperature**
+Channels are organized into groups for easier navigation.
 
-| Channel UID                 | Item Type          | RW | Description                              |
-|-----------------------------|--------------------|----|------------------------------------------|
-| temperature#tempOutdoor     | Number:Temperature | R  | Outdoor air temperature.                 |
-| temperature#tempSupply      | Number:Temperature | R  | Supply air temperature.                  |
-| temperature#tempExtract     | Number:Temperature | R  | Extract air temperature.                 |
-| temperature#tempExhaust     | Number:Temperature | R  | Exhaust air temperature.                 |
-| temperature#tempVirtSupExit | Number:Temperature | R  | Virtual supply exit temperature.         |
+### Temperature Group
 
-**Humidity**
+| Channel                       | Type               | Description                          |
+|-------------------------------|--------------------|--------------------------------------|
+| temperature#tempOutdoor       | Number:Temperature | Outdoor air temperature              |
+| temperature#tempSupply        | Number:Temperature | Supply air temperature               |
+| temperature#tempExtract       | Number:Temperature | Extract air temperature              |
+| temperature#tempExhaust       | Number:Temperature | Exhaust air temperature              |
+| temperature#tempVirtSupExit   | Number:Temperature | Virtual supply exit temperature      |
 
-| Channel UID                 | Item Type              | RW | Description                          |
-|-----------------------------|------------------------|----|--------------------------------------|
-| humidity#humidityOutdoor    | Number:Dimensionless   | R  | Outdoor relative humidity.           |
-| humidity#humidityExtract    | Number:Dimensionless   | R  | Extract air relative humidity.       |
+### Humidity Group
 
-**Air Quality**
+| Channel                       | Type                 | Description                        |
+|-------------------------------|----------------------|------------------------------------|
+| humidity#humidityOutdoor      | Number:Dimensionless | Outdoor relative humidity (%)      |
+| humidity#humidityExtract      | Number:Dimensionless | Extract air relative humidity (%)  |
 
-| Channel UID                 | Item Type              | RW | Description                      |
-|-----------------------------|------------------------|----|----------------------------------|
-| airQuality#co2Extract       | Number:Dimensionless   | R  | CO2 level in extract air (ppm).  |
-| airQuality#airPressure      | Number:Pressure        | R  | Atmospheric pressure (hPa).      |
+### Air Quality Group
 
-**Ventilation**
+| Channel                       | Type             | Description                          |
+|-------------------------------|------------------|--------------------------------------|
+| airQuality#co2Extract         | Number:Dimensionless | CO2 level in extract air (ppm)   |
+| airQuality#airPressure        | Number:Pressure  | Atmospheric pressure (hPa)           |
 
-| Channel UID                 | Item Type | RW | Description                                  |
-|-----------------------------|-----------|----|----------------------------------------------|
-| ventilation#fanSpeed        | Number    | R  | Fan speed level (0-10).                      |
-| ventilation#fanSpeedSupply  | Number    | R  | Supply fan speed (rpm).                      |
-| ventilation#fanSpeedExtract | Number    | R  | Extract fan speed (rpm).                     |
-| ventilation#airFlow         | Number    | R  | Current air flow (approx m3/h).              |
-| ventilation#airFlowAvg      | Number    | R  | Average air flow (approx m3/h).              |
-| ventilation#ventPosExtract  | Number    | R  | Extract vent position (0-31).                |
-| ventilation#ventPosBath     | Number    | R  | Bathroom vent position (0-31).               |
-| ventilation#ventPosSupply   | Number    | R  | Supply vent position (0-31).                 |
-| ventilation#ventPosBypass   | Number    | R  | Bypass vent position (0-31).                 |
+### Ventilation Group
 
-**Filter**
+| Channel                       | Type   | Description                          |
+|-------------------------------|--------|--------------------------------------|
+| ventilation#fanSpeed          | Number | Fan speed level (0-10)               |
+| ventilation#fanSpeedSupply    | Number | Supply fan speed (RPM)               |
+| ventilation#fanSpeedExtract   | Number | Extract fan speed (RPM)              |
+| ventilation#airFlow           | Number | Current air flow (m³/h)              |
+| ventilation#airFlowAvg        | Number | Average air flow (m³/h)              |
+| ventilation#ventPosExtract    | Number | Extract vent position (0-31)         |
+| ventilation#ventPosBath       | Number | Bathroom vent position (0-31)        |
+| ventilation#ventPosSupply     | Number | Supply vent position (0-31)          |
+| ventilation#ventPosBypass     | Number | Bypass vent position (0-31)          |
 
-| Channel UID                 | Item Type    | RW | Description                                      |
-|-----------------------------|--------------|----|--------------------------------------------------|
-| filter#filterSupplyFull     | Switch       | R  | Supply filter full indicator.                    |
-| filter#filterExtractFull    | Switch       | R  | Extract filter full indicator.                   |
-| filter#filterStatusSupply   | Number       | R  | Supply filter status (0 empty ... 4 full).       |
-| filter#filterStatusExtract  | Number       | R  | Extract filter status (0 empty ... 4 full).      |
-| filter#filterHours          | Number:Time  | R  | Filter operating hours.                          |
+### Filter Group
 
-**Control**
+| Channel                       | Type        | Description                          |
+|-------------------------------|-------------|--------------------------------------|
+| filter#filterSupplyFull       | Switch      | Supply filter is full (ON/OFF)       |
+| filter#filterExtractFull      | Switch      | Extract filter is full (ON/OFF)      |
+| filter#filterStatusSupply     | Number      | Supply filter status (0-4 scale)     |
+| filter#filterStatusExtract    | Number      | Extract filter status (0-4 scale)    |
+| filter#filterHours            | Number:Time | Filter operating hours               |
 
-| Channel UID                 | Item Type | RW | Description                                                       |
-|-----------------------------|-----------|----|-------------------------------------------------------------------|
-| control#comfortLevel        | Number    | RW | Comfort level 1-5.                                                |
-| control#operationMode       | String    | RW | Operation mode: comfort, sleep, turbo, turbo_cool.                |
-| control#controlAuto         | String    | R  | Active automatic control mode (e.g., humidity_reduction_rel).     |
+### Control Group
 
-**Features**
+| Channel                       | Type   | Read/Write | Description                    |
+|-------------------------------|--------|------------|--------------------------------|
+| control#comfortLevel          | Number | RW         | Comfort level setting (1-5)    |
+| control#operationMode         | String | RW         | Operation mode (see below)     |
+| control#controlAuto           | String | R          | Current automatic control mode |
 
-| Channel UID                     | Item Type | RW | Description                          |
-|---------------------------------|-----------|----|--------------------------------------|
-| features#humidityReductionMode  | Switch    | R  | Humidity reduction mode active.      |
-| features#summerCooling          | Switch    | R  | Summer cooling active.               |
-| features#deicing                | Switch    | R  | Deicing or defrost active.           |
+**Operation Mode values:**
 
-**Diagnostics**
+- `comfort` - Normal comfort mode
+- `sleep` - Sleep/quiet mode
+- `turbo` - High ventilation mode
+- `turbo_cool` - Turbo cooling mode
 
-| Channel UID                    | Item Type    | RW | Description                                          |
-|--------------------------------|--------------|----|------------------------------------------------------|
-| diagnostics#errorState         | Number       | R  | Error code (0 = none, 22 = maintenance reminder).    |
-| diagnostics#operatingHours     | Number:Time  | R  | Total operating hours.                               |
-| diagnostics#rssi               | Number:Power | R  | Wi-Fi signal strength (dBm).                         |
+**Auto Control Mode values (read-only):**
 
-**Efficiency**
+- `min_ventilation` - Minimum ventilation
+- `humidity_reduction_rel` - Humidity reduction (relative)
+- `humidity_reduction_abs` - Humidity reduction (absolute)
+- `active_cooling` - Active cooling
+- `co2_reduction` - CO2 reduction
+- `water_insertion` - Water insertion
+- `outdoor_temp_lt_22_degc` - Outdoor temp < -22°C
+- `humidity_input` - Humidity input
 
-| Channel UID                    | Item Type                | RW | Description                          |
-|--------------------------------|--------------------------|----|--------------------------------------|
-| efficiency#energySavings       | Number:Power             | R  | Calculated energy savings (W).       |
-| efficiency#heatRecovery        | Number:Dimensionless     | R  | Heat recovery efficiency (%).        |
+### Features Group
 
-## Examples
+| Channel                       | Type   | Description                          |
+|-------------------------------|--------|--------------------------------------|
+| features#humidityReductionMode| Switch | Humidity reduction mode active       |
+| features#summerCooling        | Switch | Summer cooling active                |
+| features#deicing              | Switch | Deicing/defrost active               |
 
-**Thing (freeair.things)**
+### Diagnostics Group
 
+| Channel                       | Type        | Description                          |
+|-------------------------------|-------------|--------------------------------------|
+| diagnostics#errorState        | Number      | Device error state code              |
+| diagnostics#operatingHours    | Number:Time | Total operating hours                |
+| diagnostics#rssi              | Number:Power| Wireless signal strength (dBm)       |
+
+### Efficiency Group
+
+| Channel                       | Type                 | Description                    |
+|-------------------------------|----------------------|--------------------------------|
+| efficiency#energySavings      | Number:Power         | Calculated energy savings (W)  |
+| efficiency#heatRecovery       | Number:Dimensionless | Heat recovery efficiency (%)   |
+
+## Full Example
+
+### Thing Configuration
+
+```java
+Thing freeair:device:livingroom "FreeAir Living Room" [serialNumber="12345", password="MyPassword", refreshInterval=300]
 ```
-Thing freeair:device:house "FreeAir Ventilation" [ serialNumber="1234567890", password="mySecret", refreshInterval=300 ]
+
+### Item Configuration
+
+```java
+// Temperature
+Number:Temperature FreeAir_TempOutdoor "Outdoor Temperature [%.1f °C]" {channel="freeair:device:livingroom:temperature#tempOutdoor"}
+Number:Temperature FreeAir_TempSupply "Supply Temperature [%.1f °C]" {channel="freeair:device:livingroom:temperature#tempSupply"}
+Number:Temperature FreeAir_TempExtract "Extract Temperature [%.1f °C]" {channel="freeair:device:livingroom:temperature#tempExtract"}
+
+// Humidity
+Number:Dimensionless FreeAir_HumidityOutdoor "Outdoor Humidity [%.0f %%]" {channel="freeair:device:livingroom:humidity#humidityOutdoor"}
+Number:Dimensionless FreeAir_HumidityExtract "Extract Humidity [%.0f %%]" {channel="freeair:device:livingroom:humidity#humidityExtract"}
+
+// Air Quality
+Number:Dimensionless FreeAir_CO2 "CO2 Level [%.0f ppm]" {channel="freeair:device:livingroom:airQuality#co2Extract"}
+Number:Pressure FreeAir_Pressure "Air Pressure [%.0f hPa]" {channel="freeair:device:livingroom:airQuality#airPressure"}
+
+// Fan
+Number FreeAir_FanSpeed "Fan Speed Level [%d]" {channel="freeair:device:livingroom:ventilation#fanSpeed"}
+Number FreeAir_FanSupplyRPM "Supply Fan [%.0f rpm]" {channel="freeair:device:livingroom:ventilation#fanSpeedSupply"}
+Number FreeAir_FanExtractRPM "Extract Fan [%.0f rpm]" {channel="freeair:device:livingroom:ventilation#fanSpeedExtract"}
+
+// Filter
+Switch FreeAir_FilterSupplyFull "Supply Filter Full" {channel="freeair:device:livingroom:filter#filterSupplyFull"}
+Switch FreeAir_FilterExtractFull "Extract Filter Full" {channel="freeair:device:livingroom:filter#filterExtractFull"}
+
+// Control
+Number FreeAir_ComfortLevel "Comfort Level [%d]" {channel="freeair:device:livingroom:control#comfortLevel"}
+String FreeAir_OperationMode "Operation Mode [%s]" {channel="freeair:device:livingroom:control#operationMode"}
+
+// Efficiency
+Number:Power FreeAir_EnergySavings "Energy Savings [%.0f W]" {channel="freeair:device:livingroom:efficiency#energySavings"}
+Number:Dimensionless FreeAir_HeatRecovery "Heat Recovery [%.0f %%]" {channel="freeair:device:livingroom:efficiency#heatRecovery"}
 ```
 
-**Items (freeair.items)**
+### Sitemap Configuration
 
-```
-Number:Temperature Freeair_Temp_Outdoor "Outdoor temp [%.1f %unit%]" { channel="freeair:device:house:temperature#tempOutdoor" }
-Number:Temperature Freeair_Temp_Supply "Supply temp [%.1f %unit%]" { channel="freeair:device:house:temperature#tempSupply" }
-Number:Dimensionless Freeair_CO2 "CO2 [%.0f ppm]" { channel="freeair:device:house:airQuality#co2Extract" }
-Number Freeair_FanSpeed "Fan level [%d]" { channel="freeair:device:house:ventilation#fanSpeed" }
-Number Freeair_ComfortLevel "Comfort level [%d]" { channel="freeair:device:house:control#comfortLevel" }
-String Freeair_OperationMode "Operation mode [%s]" { channel="freeair:device:house:control#operationMode" }
-Switch Freeair_FilterSupplyFull "Supply filter full [%s]" { channel="freeair:device:house:filter#filterSupplyFull" }
-```
-
-**Sitemap (freeair.sitemap)**
-
-```
-sitemap freeair label="FreeAir"
-{
-  Frame label="Temperatures" {
-    Text item=Freeair_Temp_Outdoor
-    Text item=Freeair_Temp_Supply
-  }
-  Frame label="Air quality" {
-    Text item=Freeair_CO2
-  }
-  Frame label="Ventilation" {
-    Text item=Freeair_FanSpeed
-    Setpoint item=Freeair_ComfortLevel minValue=1 maxValue=5 step=1
-    Selection item=Freeair_OperationMode mappings=[comfort="Comfort", sleep="Sleep", turbo="Turbo", turbo_cool="Turbo Cool"]
-  }
-  Frame label="Filter" {
-    Text item=Freeair_FilterSupplyFull
-  }
+```perl
+sitemap freeair label="FreeAir Ventilation" {
+    Frame label="Temperature" {
+        Text item=FreeAir_TempOutdoor
+        Text item=FreeAir_TempSupply
+        Text item=FreeAir_TempExtract
+    }
+    Frame label="Humidity & Air Quality" {
+        Text item=FreeAir_HumidityOutdoor
+        Text item=FreeAir_HumidityExtract
+        Text item=FreeAir_CO2
+        Text item=FreeAir_Pressure
+    }
+    Frame label="Ventilation" {
+        Text item=FreeAir_FanSpeed
+        Text item=FreeAir_FanSupplyRPM
+        Text item=FreeAir_FanExtractRPM
+    }
+    Frame label="Filter Status" {
+        Text item=FreeAir_FilterSupplyFull
+        Text item=FreeAir_FilterExtractFull
+    }
+    Frame label="Control" {
+        Setpoint item=FreeAir_ComfortLevel minValue=1 maxValue=5 step=1
+        Selection item=FreeAir_OperationMode mappings=["comfort"="Comfort", "sleep"="Sleep", "turbo"="Turbo", "turbo_cool"="Turbo Cool"]
+    }
+    Frame label="Efficiency" {
+        Text item=FreeAir_EnergySavings
+        Text item=FreeAir_HeatRecovery
+    }
 }
 ```
 
-## Notes
-- The binding logs in to the FreeAir Connect cloud for each poll; keep `refreshInterval` conservative to avoid throttling.
-- Only `control#comfortLevel` and `control#operationMode` accept commands; all other channels are read-only.
-- Errors reported by the device surface via `diagnostics#errorState`; check FreeAir documentation for code meanings.
+## Troubleshooting
+
+### "Illegal key size" error
+
+This error occurs when Java's cryptography policy restricts key sizes.
+FreeAir devices with firmware 2.14+ require AES-256 encryption.
+
+**Solution:** Enable unlimited cryptography policy (see Prerequisites section above).
+
+### Device goes OFFLINE with "Failed to parse device data"
+
+Check the openHAB logs for detailed error messages.
+Common causes:
+
+- Incorrect password
+- Network connectivity issues to freeair-connect.de
+- Encryption key size issue (see above)
+
+### Device shows UNKNOWN status
+
+The binding is attempting to connect.
+If it stays in UNKNOWN state, check:
+
+- Serial number is correct
+- Password is correct
+- Internet connectivity
