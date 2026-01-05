@@ -1,5 +1,7 @@
 # Build output
 /target/
+/dist/
+/build/
 *.log
 
 # IDEs
@@ -8,6 +10,7 @@
 *.ipr
 *.iws
 .vscode/
+.claude/
 .classpath
 .project
 .settings/

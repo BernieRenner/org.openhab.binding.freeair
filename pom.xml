@@ -22,9 +22,9 @@
   </licenses>
 
   <properties>
-    <!-- Default build: openHAB 5.1.x snapshot -->
-    <revision>5.1.0-SNAPSHOT</revision>
-    <oh.version>5.1.0-SNAPSHOT</oh.version>
+    <!-- Default build: openHAB 5.1.x -->
+    <revision>5.1.0</revision>
+    <oh.version>5.1.0</oh.version>
 
     <!-- Java & build -->
     <maven.compiler.release>21</maven.compiler.release>
