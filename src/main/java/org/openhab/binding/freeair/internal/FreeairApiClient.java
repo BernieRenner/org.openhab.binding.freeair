@@ -49,6 +49,7 @@ public class FreeairApiClient {
     private final FreeairDataParser dataParser;
 
     private @Nullable FreeairDeviceData lastData;
+    private @Nullable String lastErrorText;
     private boolean loggedIn = false;
 
     public FreeairApiClient(String serialNumber, String password) {
@@ -191,6 +192,12 @@ public class FreeairApiClient {
             FreeairDeviceData data = dataParser.parse(responseBody);
             if (data != null) {
                 lastData = data;
+                lastErrorText = null;
+
+                // Clear previous error text so stale messages are not shown when the state recovers
+                data.setErrorText(null);
+                data.setErrorTextEn("");
+                data.setErrorTextDe("");
 
                 // Fetch error text if there's an error
                 int errorState = data.getErrorState();
@@ -264,12 +271,21 @@ public class FreeairApiClient {
                         }
                     }
 
+                    String combinedText = null;
+
                     if (allErrorsEn.length() > 0) {
                         data.setErrorTextEn(allErrorsEn.toString());
+                        combinedText = allErrorsEn.toString();
                     }
                     if (allErrorsDe.length() > 0) {
                         data.setErrorTextDe(allErrorsDe.toString());
+                        if (combinedText == null) {
+                            combinedText = allErrorsDe.toString();
+                        }
                     }
+
+                    data.setErrorText(combinedText);
+                    lastErrorText = combinedText;
 
                     logger.debug("Parsed error text - EN: '{}', DE: '{}'",
                             data.getErrorTextEn(), data.getErrorTextDe());

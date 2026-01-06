@@ -245,8 +245,11 @@ public class FreeairHandler extends BaseThingHandler {
 
         // Diagnostic channels
         updateState(CHANNEL_ERROR_STATE, new DecimalType(data.getErrorState()));
-        String errorText = data.getErrorTextEn();
-        if (errorText.isEmpty()) {
+        String errorText = data.getErrorText();
+        if (errorText == null || errorText.isEmpty()) {
+            errorText = data.getErrorTextEn();
+        }
+        if (errorText == null || errorText.isEmpty()) {
             errorText = data.getErrorState() == 0 ? "OK" : "Error " + data.getErrorState();
         }
         updateState(CHANNEL_ERROR_TEXT, new StringType(errorText));

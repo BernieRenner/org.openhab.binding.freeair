@@ -82,6 +82,9 @@ public class FreeairDeviceData {
     private int energySavings;
     private int heatRecovery;
 
+    // Human readable error information
+    private @Nullable String errorText;
+
     // Device info
     private String timestamp = "";
     private String version = "";
@@ -400,6 +403,14 @@ public class FreeairDeviceData {
 
     public void setHeatRecovery(int heatRecovery) {
         this.heatRecovery = heatRecovery;
+    }
+
+    public @Nullable String getErrorText() {
+        return errorText;
+    }
+
+    public void setErrorText(@Nullable String errorText) {
+        this.errorText = errorText;
     }
 
     public String getTimestamp() {
