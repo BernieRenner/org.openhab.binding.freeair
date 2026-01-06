@@ -2,7 +2,9 @@
 /target/
 /dist/
 /build/
+/reference/
 *.log
+nul
 
 # IDEs
 .idea/

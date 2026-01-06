@@ -18,12 +18,15 @@ import java.io.IOException;
 import java.net.CookieManager;
 import java.net.CookiePolicy;
 import java.net.URI;
+import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
@@ -192,7 +195,7 @@ public class FreeairApiClient {
                 // Fetch error text if there's an error
                 int errorState = data.getErrorState();
                 if (errorState != 0 && errorState != 22) {
-                    fetchErrorText();
+                    fetchErrorText(data);
                 }
             }
 
@@ -208,8 +211,9 @@ public class FreeairApiClient {
 
     /**
      * Fetch error text from the API when device is in error state.
+     * Parses the response and stores the error text in the device data.
      */
-    private void fetchErrorText() {
+    private void fetchErrorText(FreeairDeviceData data) {
         try {
             String postData = "serObject=" + URLEncoder.encode(
                     "err=1&serialnumber=" + serialNumber + "&device=1", StandardCharsets.UTF_8);
@@ -224,7 +228,52 @@ public class FreeairApiClient {
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
             if (response.statusCode() == 200) {
-                logger.debug("Error text response: {}", response.body());
+                String responseBody = response.body();
+                logger.debug("Error text raw response ({} chars): '{}'",
+                        responseBody != null ? responseBody.length() : 0, responseBody);
+
+                // Parse the response: format is "id_error_type=1&en=...&de=...trans..."
+                // The response may contain multiple error entries separated by "trans"
+                // We collect all meaningful error messages
+                if (responseBody != null && !responseBody.isEmpty()) {
+                    StringBuilder allErrorsEn = new StringBuilder();
+                    StringBuilder allErrorsDe = new StringBuilder();
+
+                    // Split by "trans" to get individual error entries
+                    String[] parts = responseBody.split("trans");
+                    for (String part : parts) {
+                        if (part.isEmpty()) {
+                            continue;
+                        }
+                        Map<String, String> errorTexts = parseQueryString(part);
+                        String en = errorTexts.get("en");
+                        String de = errorTexts.get("de");
+
+                        // Skip very short entries (like "fio", "fia") - likely internal codes
+                        if (en != null && en.length() > 5) {
+                            if (allErrorsEn.length() > 0) {
+                                allErrorsEn.append(" | ");
+                            }
+                            allErrorsEn.append(en);
+                        }
+                        if (de != null && de.length() > 5) {
+                            if (allErrorsDe.length() > 0) {
+                                allErrorsDe.append(" | ");
+                            }
+                            allErrorsDe.append(de);
+                        }
+                    }
+
+                    if (allErrorsEn.length() > 0) {
+                        data.setErrorTextEn(allErrorsEn.toString());
+                    }
+                    if (allErrorsDe.length() > 0) {
+                        data.setErrorTextDe(allErrorsDe.toString());
+                    }
+
+                    logger.debug("Parsed error text - EN: '{}', DE: '{}'",
+                            data.getErrorTextEn(), data.getErrorTextDe());
+                }
             }
         } catch (IOException | InterruptedException e) {
             if (e instanceof InterruptedException) {
@@ -232,6 +281,24 @@ public class FreeairApiClient {
             }
             logger.warn("Failed to fetch error text: {}", e.getMessage());
         }
+    }
+
+    /**
+     * Parse a URL-encoded query string into a map.
+     */
+    private Map<String, String> parseQueryString(String queryString) {
+        Map<String, String> result = new HashMap<>();
+        String[] pairs = queryString.split("&");
+        for (String pair : pairs) {
+            int idx = pair.indexOf('=');
+            if (idx > 0) {
+                String key = pair.substring(0, idx);
+                String value = idx < pair.length() - 1 ? pair.substring(idx + 1) : "";
+                // URL decode the value
+                result.put(key, URLDecoder.decode(value, StandardCharsets.UTF_8));
+            }
+        }
+        return result;
     }
 
     /**

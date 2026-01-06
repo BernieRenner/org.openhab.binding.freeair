@@ -208,8 +208,8 @@ public class FreeairHandler extends BaseThingHandler {
         updateState(CHANNEL_FAN_SPEED, new DecimalType(data.getFanSpeed()));
         updateState(CHANNEL_FAN_SPEED_SUPPLY, new DecimalType(data.getFanSpeedSupply()));
         updateState(CHANNEL_FAN_SPEED_EXTRACT, new DecimalType(data.getFanSpeedExtract()));
-        updateState(CHANNEL_AIR_FLOW, new DecimalType(data.getAirFlow()));
-        updateState(CHANNEL_AIR_FLOW_AVG, new DecimalType(data.getAirFlowAvg()));
+        updateState(CHANNEL_AIR_FLOW, new QuantityType<>(data.getAirFlow(), Units.CUBICMETRE_PER_HOUR));
+        updateState(CHANNEL_AIR_FLOW_AVG, new QuantityType<>(data.getAirFlowAvg(), Units.CUBICMETRE_PER_HOUR));
 
         // Vent position channels
         updateState(CHANNEL_VENT_POS_EXTRACT, new DecimalType(data.getVentPosExtract()));
@@ -245,8 +245,13 @@ public class FreeairHandler extends BaseThingHandler {
 
         // Diagnostic channels
         updateState(CHANNEL_ERROR_STATE, new DecimalType(data.getErrorState()));
+        String errorText = data.getErrorTextEn();
+        if (errorText.isEmpty()) {
+            errorText = data.getErrorState() == 0 ? "OK" : "Error " + data.getErrorState();
+        }
+        updateState(CHANNEL_ERROR_TEXT, new StringType(errorText));
         updateState(CHANNEL_OPERATING_HOURS, new QuantityType<>(data.getOperatingHours(), Units.HOUR));
-        updateState(CHANNEL_RSSI, new QuantityType<>(data.getRssi(), Units.DECIBEL_MILLIWATTS));
+        updateState(CHANNEL_RSSI, new DecimalType(data.getRssi()));
 
         // Efficiency channels
         updateState(CHANNEL_ENERGY_SAVINGS, new QuantityType<>(data.getEnergySavings(), Units.WATT));

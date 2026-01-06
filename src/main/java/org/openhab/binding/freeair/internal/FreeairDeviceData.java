@@ -70,6 +70,11 @@ public class FreeairDeviceData {
 
     // Diagnostics
     private int errorState;
+    private int errorFileNbr;
+    private int errorLineNbr;
+    private int errorCode;
+    private String errorTextEn = "";
+    private String errorTextDe = "";
     private int operatingHours;
     private int rssi;
 
@@ -323,6 +328,46 @@ public class FreeairDeviceData {
 
     public void setErrorState(int errorState) {
         this.errorState = errorState;
+    }
+
+    public int getErrorFileNbr() {
+        return errorFileNbr;
+    }
+
+    public void setErrorFileNbr(int errorFileNbr) {
+        this.errorFileNbr = errorFileNbr;
+    }
+
+    public int getErrorLineNbr() {
+        return errorLineNbr;
+    }
+
+    public void setErrorLineNbr(int errorLineNbr) {
+        this.errorLineNbr = errorLineNbr;
+    }
+
+    public int getErrorCode() {
+        return errorCode;
+    }
+
+    public void setErrorCode(int errorCode) {
+        this.errorCode = errorCode;
+    }
+
+    public String getErrorTextEn() {
+        return errorTextEn;
+    }
+
+    public void setErrorTextEn(String errorTextEn) {
+        this.errorTextEn = errorTextEn;
+    }
+
+    public String getErrorTextDe() {
+        return errorTextDe;
+    }
+
+    public void setErrorTextDe(String errorTextDe) {
+        this.errorTextDe = errorTextDe;
     }
 
     public int getOperatingHours() {

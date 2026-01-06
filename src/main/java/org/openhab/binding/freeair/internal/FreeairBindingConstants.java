@@ -96,6 +96,7 @@ public class FreeairBindingConstants {
 
     // Channel IDs - Diagnostics (with group prefix)
     public static final String CHANNEL_ERROR_STATE = GROUP_DIAGNOSTICS + "#errorState";
+    public static final String CHANNEL_ERROR_TEXT = GROUP_DIAGNOSTICS + "#errorText";
     public static final String CHANNEL_OPERATING_HOURS = GROUP_DIAGNOSTICS + "#operatingHours";
     public static final String CHANNEL_RSSI = GROUP_DIAGNOSTICS + "#rssi";
 

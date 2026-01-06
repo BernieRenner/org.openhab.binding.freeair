@@ -220,6 +220,10 @@
 				<label>Error State</label>
 				<description>Device error state code</description>
 			</channel>
+			<channel id="errorText" typeId="error-text">
+				<label>Error Text</label>
+				<description>Human-readable error description</description>
+			</channel>
 			<channel id="operatingHours" typeId="operating-hours">
 				<label>Operating Hours</label>
 				<description>Total operating hours</description>
@@ -290,7 +294,7 @@
 	</channel-type>
 
 	<channel-type id="air-flow">
-		<item-type>Number</item-type>
+		<item-type>Number:VolumetricFlowRate</item-type>
 		<label>Air Flow</label>
 		<category>Flow</category>
 		<state readOnly="true" pattern="%.0f m³/h"/>
@@ -368,6 +372,13 @@
 		<state readOnly="true"/>
 	</channel-type>
 
+	<channel-type id="error-text">
+		<item-type>String</item-type>
+		<label>Error Text</label>
+		<category>Error</category>
+		<state readOnly="true"/>
+	</channel-type>
+
 	<channel-type id="operating-hours">
 		<item-type>Number:Time</item-type>
 		<label>Operating Hours</label>
@@ -376,7 +387,7 @@
 	</channel-type>
 
 	<channel-type id="rssi">
-		<item-type>Number:Power</item-type>
+		<item-type>Number</item-type>
 		<label>Signal Strength</label>
 		<category>QualityOfService</category>
 		<state readOnly="true" pattern="%.0f dBm"/>

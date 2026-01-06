@@ -117,6 +117,17 @@ public class FreeairConsoleTest {
             printChannelGroup("diagnostics");
             printChannel("errorState", data.getErrorState() + (data.getErrorState() == 0 ? " (OK)" : " (ERROR!)"),
                     "Number");
+            String errorTextEn = data.getErrorTextEn();
+            String errorTextDe = data.getErrorTextDe();
+            String errorText = errorTextEn.isEmpty()
+                    ? (data.getErrorState() == 0 ? "OK" : "Error " + data.getErrorState())
+                    : errorTextEn;
+            printChannel("errorText", errorText, "String");
+            printChannel("errorTextEn (raw)", "'" + errorTextEn + "'", "String");
+            printChannel("errorTextDe (raw)", "'" + errorTextDe + "'", "String");
+            printChannel("errorFileNbr", String.valueOf(data.getErrorFileNbr()), "Number (internal)");
+            printChannel("errorLineNbr", String.valueOf(data.getErrorLineNbr()), "Number (internal)");
+            printChannel("errorCode", String.valueOf(data.getErrorCode()), "Number (internal)");
             printChannel("operatingHours", data.getOperatingHours() + " h", "Number:Time");
             printChannel("rssi", data.getRssi() + " dBm", "Number:Power");
 

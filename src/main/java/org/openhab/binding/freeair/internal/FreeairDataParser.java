@@ -272,16 +272,28 @@ public class FreeairDataParser {
         // ErrorState: 5 LSB bits of byte[24]
         deviceData.setErrorState(getLowBits(data[24] & 0xFF, 5));
 
+        // ErrorFileNbr: 6 LSB bits of byte[23]
+        deviceData.setErrorFileNbr(getLowBits(data[23] & 0xFF, 6));
+
+        // ErrorLineNbr: complex extraction from bytes[39,10,11]
+        // 2 bits from byte[39] bits 5-6, then 7 bits from byte[10], then 7 bits from byte[11]
+        int errorLineHigh = (data[39] & 0xFF) >> 5 & 0x03;
+        int errorLineMid = data[10] & 0x7F;
+        int errorLineLow = data[11] & 0x7F;
+        deviceData.setErrorLineNbr((errorLineHigh << 14) | (errorLineMid << 7) | errorLineLow);
+
+        // ErrorCode: 1 bit from byte[40] bit 6, then 7 bits from byte[12]
+        int errorCodeHigh = (data[40] & 0xFF) >> 6 & 0x01;
+        int errorCodeLow = data[12] & 0x7F;
+        deviceData.setErrorCode((errorCodeHigh << 7) | errorCodeLow);
+
         // Operating hours: uses 3 bytes with super high bits
         int operatingHoursSuperHigh = getLowBits(data[40] & 0xFF, 4);
         int operatingHours = lowPlusHighSuper(data[14] & 0xFF, data[15] & 0xFF, operatingHoursSuperHigh);
         deviceData.setOperatingHours(operatingHours);
 
-        // RSSI: full byte, signed - position depends on encryption mode
-        // For AES-256 (version > 2.13 except 2.20/2.21), RSSI is at byte 43
-        // For AES-128, RSSI is at byte 47
-        int rssiPos = checkForCrypt256(version) ? 43 : 47;
-        int rssiRaw = (rssiPos < data.length) ? (data[rssiPos] & 0xFF) : 0;
+        // RSSI: full byte at position 47, signed (Python reference uses byte[47] always)
+        int rssiRaw = (47 < data.length) ? (data[47] & 0xFF) : 0;
         deviceData.setRssi(asSigned(rssiRaw, 8));
 
         // Efficiency calculations
@@ -332,22 +344,6 @@ public class FreeairDataParser {
         int lowBits = low & 0x7F;
         int highBits = high & 0x7F;
         return (superHigh << 14) | (highBits << 7) | lowBits;
-    }
-
-    /**
-     * Check if version uses AES-256 encryption.
-     * AES-128 is used for version 2.x where x <= 13 or x == 20 or x == 21.
-     * All other versions use AES-256.
-     */
-    private boolean checkForCrypt256(String version) {
-        String[] parts = version.split("x");
-        if (parts.length < 2) {
-            return true; // Default to AES-256
-        }
-        int major = Integer.parseInt(parts[0]);
-        int minor = Integer.parseInt(parts[1]);
-        boolean crypt128 = (major == 2) && (minor <= 13 || minor == 20 || minor == 21);
-        return !crypt128;
     }
 
     /**
