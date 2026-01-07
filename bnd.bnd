@@ -1,5 +1,25 @@
-Bundle-Name: Freeair Binding
-Bundle-SymbolicName: org.openhab.binding.freeair
-Bundle-Version: 5.1.0.SNAPSHOT
+Bundle-Name: openHAB FreeAir Binding
+Bundle-SymbolicName: ${project.artifactId}
+Bundle-Version: ${project.version}
+Bundle-Vendor: openHAB Community
+Bundle-License: EPL-2.0
+Bundle-Description: openHAB binding for FreeAir ventilation systems
+
+# Export nothing - internal implementation only
+Export-Package:
+
+# Keep all classes private
 Private-Package: org.openhab.binding.freeair.*
+
+# Generate Declarative Services components from annotations
 -dsannotations: *
+-dsannotations-options: version;minimum=1.4
+
+# Let bnd calculate imports automatically
+Import-Package: *
+
+# Include OH-INF resources for thing-types, config, i18n
+-includeresource: OH-INF=src/main/resources/OH-INF
+
+# Reproducible builds
+-noextraheaders: true

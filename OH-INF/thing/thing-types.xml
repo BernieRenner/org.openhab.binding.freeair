@@ -167,14 +167,6 @@
 				<label>Extract Filter Status</label>
 				<description>Extract filter status (0-4 scale)</description>
 			</channel>
-			<channel id="filterStatusSupplyDescription" typeId="filter-status-description">
-				<label>Supply Filter Description</label>
-				<description>Supply filter condition description</description>
-			</channel>
-			<channel id="filterStatusExtractDescription" typeId="filter-status-description">
-				<label>Extract Filter Description</label>
-				<description>Extract filter condition description</description>
-			</channel>
 			<channel id="filterHours" typeId="operating-hours">
 				<label>Filter Hours</label>
 				<description>Filter operating hours</description>
@@ -324,25 +316,8 @@
 	<channel-type id="filter-status">
 		<item-type>Number</item-type>
 		<label>Filter Status</label>
-		<description>Filter condition (0=new, 4=full)</description>
-		<category>QualityOfService</category>
-		<state readOnly="true" min="0" max="4">
-			<options>
-				<option value="0">New</option>
-				<option value="1">Light</option>
-				<option value="2">Moderate</option>
-				<option value="3">Heavy</option>
-				<option value="4">Full</option>
-			</options>
-		</state>
-	</channel-type>
-
-	<channel-type id="filter-status-description">
-		<item-type>String</item-type>
-		<label>Filter Status Description</label>
-		<description>Detailed filter condition description</description>
-		<category>QualityOfService</category>
-		<state readOnly="true"/>
+		<description>Filter condition (0=empty, 4=full)</description>
+		<state readOnly="true" min="0" max="4"/>
 	</channel-type>
 
 	<channel-type id="comfort-level">

@@ -224,11 +224,15 @@ public class FreeairHandler extends BaseThingHandler {
         Integer filterStatusSupply = data.getFilterStatusSupply();
         if (filterStatusSupply != null) {
             updateState(CHANNEL_FILTER_STATUS_SUPPLY, new DecimalType(filterStatusSupply));
+            String supplyDesc = FILTER_STATUS_DESCRIPTION_MAP.getOrDefault(filterStatusSupply, "Unknown");
+            updateState(CHANNEL_FILTER_STATUS_SUPPLY_DESC, new StringType(supplyDesc));
         }
 
         Integer filterStatusExtract = data.getFilterStatusExtract();
         if (filterStatusExtract != null) {
             updateState(CHANNEL_FILTER_STATUS_EXTRACT, new DecimalType(filterStatusExtract));
+            String extractDesc = FILTER_STATUS_DESCRIPTION_MAP.getOrDefault(filterStatusExtract, "Unknown");
+            updateState(CHANNEL_FILTER_STATUS_EXTRACT_DESC, new StringType(extractDesc));
         }
 
         updateState(CHANNEL_FILTER_HOURS, new QuantityType<>(data.getFilterHours(), Units.HOUR));

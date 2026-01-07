@@ -5,6 +5,7 @@
 /reference/
 *.log
 nul
+.flattened-pom.xml
 
 # IDEs
 .idea/

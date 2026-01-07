@@ -82,6 +82,8 @@ public class FreeairBindingConstants {
     public static final String CHANNEL_FILTER_EXTRACT_FULL = GROUP_FILTER + "#filterExtractFull";
     public static final String CHANNEL_FILTER_STATUS_SUPPLY = GROUP_FILTER + "#filterStatusSupply";
     public static final String CHANNEL_FILTER_STATUS_EXTRACT = GROUP_FILTER + "#filterStatusExtract";
+    public static final String CHANNEL_FILTER_STATUS_SUPPLY_DESC = GROUP_FILTER + "#filterStatusSupplyDescription";
+    public static final String CHANNEL_FILTER_STATUS_EXTRACT_DESC = GROUP_FILTER + "#filterStatusExtractDescription";
     public static final String CHANNEL_FILTER_HOURS = GROUP_FILTER + "#filterHours";
 
     // Channel IDs - Control/Status (with group prefix)
@@ -134,5 +136,14 @@ public class FreeairBindingConstants {
             "sleep", 2,
             "turbo", 3,
             "turbo_cool", 4
+    );
+
+    // Filter status description mappings (code -> description)
+    public static final Map<Integer, String> FILTER_STATUS_DESCRIPTION_MAP = Map.of(
+            0, "Filter is clean - fan RPM is below the baseline threshold",
+            1, "Filter is slightly dirty (~0-40% of range)",
+            2, "Filter is moderately dirty (~40-70% of range)",
+            3, "Filter is getting full (~70-95% of range)",
+            4, "Filter needs replacement (>95% of range)"
     );
 }

@@ -5,13 +5,12 @@
 
   <modelVersion>4.0.0</modelVersion>
 
-  <!-- Use any groupId you prefer -->
   <groupId>org.openhab.addons.bundles</groupId>
   <artifactId>org.openhab.binding.freeair</artifactId>
   <version>${revision}</version>
   <packaging>jar</packaging>
-  <name>openHAB Add-ons :: Bundles :: Freeair Binding</name>
-  <description>Standalone openHAB binding</description>
+  <name>openHAB Add-ons :: Bundles :: FreeAir Binding</name>
+  <description>openHAB binding for FreeAir ventilation systems</description>
 
   <licenses>
     <license>
@@ -32,11 +31,12 @@
 
     <!-- Plugin versions -->
     <compiler.plugin.version>3.13.0</compiler.plugin.version>
-    <bnd.plugin.version>6.4.0</bnd.plugin.version>
+    <bnd.plugin.version>7.0.0</bnd.plugin.version>
     <jar.plugin.version>3.4.2</jar.plugin.version>
+    <flatten.plugin.version>1.6.0</flatten.plugin.version>
   </properties>
 
-  <!-- Build for openHAB 5.0.0: mvn -Poh50 -DskipTests clean install -->
+  <!-- Build for openHAB 5.0.0: mvn -Poh50 clean package -->
   <profiles>
     <profile>
       <id>oh50</id>
@@ -165,21 +165,7 @@
           </execution>
         </executions>
         <configuration>
-          <!-- Inline bnd config; no external bnd.bnd needed -->
-          <bnd><![CDATA[
-Bundle-Name: Freeair Binding
-Bundle-SymbolicName: org.openhab.binding.freeair
-Bundle-Version: ${version}
-
-# Keep classes private by default
-Private-Package: org.openhab.binding.freeair.*
-
-# Generate DS from @Component etc.
--dsannotations: *
-
-# Let bnd calculate imports
-Import-Package: *
-          ]]></bnd>
+          <bndfile>bnd.bnd</bndfile>
         </configuration>
       </plugin>
 
@@ -212,6 +198,33 @@ Import-Package: *
             <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
           </archive>
         </configuration>
+      </plugin>
+
+      <!-- Flatten pom to resolve ${revision} for install/deploy -->
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>flatten-maven-plugin</artifactId>
+        <version>${flatten.plugin.version}</version>
+        <configuration>
+          <updatePomFile>true</updatePomFile>
+          <flattenMode>resolveCiFriendliesOnly</flattenMode>
+        </configuration>
+        <executions>
+          <execution>
+            <id>flatten</id>
+            <phase>process-resources</phase>
+            <goals>
+              <goal>flatten</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>flatten.clean</id>
+            <phase>clean</phase>
+            <goals>
+              <goal>clean</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>
