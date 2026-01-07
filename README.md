@@ -113,13 +113,28 @@ Channels are organized into groups for easier navigation.
 
 ### Filter Group
 
-| Channel                       | Type        | Description                          |
-|-------------------------------|-------------|--------------------------------------|
-| filter#filterSupplyFull       | Switch      | Supply filter is full (ON/OFF)       |
-| filter#filterExtractFull      | Switch      | Extract filter is full (ON/OFF)      |
-| filter#filterStatusSupply     | Number      | Supply filter status (0-4 scale)     |
-| filter#filterStatusExtract    | Number      | Extract filter status (0-4 scale)    |
-| filter#filterHours            | Number:Time | Filter operating hours               |
+| Channel                              | Type        | Description                          |
+|--------------------------------------|-------------|--------------------------------------|
+| filter#filterSupplyFull              | Switch      | Supply filter is full (ON/OFF)       |
+| filter#filterExtractFull             | Switch      | Extract filter is full (ON/OFF)      |
+| filter#filterStatusSupply            | Number      | Supply filter status (1-4 scale)     |
+| filter#filterStatusExtract           | Number      | Extract filter status (1-4 scale)    |
+| filter#filterStatusSupplyDescription | String      | Supply filter condition description  |
+| filter#filterStatusExtractDescription| String      | Extract filter condition description |
+| filter#filterHours                   | Number:Time | Filter operating hours               |
+
+**Filter Status values:**
+
+| Value | Label    | Description                                    |
+|-------|----------|------------------------------------------------|
+| 1     | New      | Filter is clean (~0-40% of expected RPM range) |
+| 2     | Light    | Filter is lightly used (~40-70% of range)      |
+| 3     | Moderate | Filter is moderately dirty (~70-95% of range)  |
+| 4     | Full     | Filter needs replacement (>95% of range)       |
+
+Note: Filter status is calculated from fan RPM. When the fan is off or at very low speed,
+the status cannot be determined and will show as UNDEF. The `filterSupplyFull` and
+`filterExtractFull` switches provide direct device flags that are always available.
 
 ### Control Group
 
@@ -160,8 +175,11 @@ Channels are organized into groups for easier navigation.
 | Channel                       | Type        | Description                          |
 |-------------------------------|-------------|--------------------------------------|
 | diagnostics#errorState        | Number      | Device error state code              |
+| diagnostics#errorText         | String      | Human-readable error description     |
 | diagnostics#operatingHours    | Number:Time | Total operating hours                |
-| diagnostics#rssi              | Number:Power| Wireless signal strength (dBm)       |
+| diagnostics#rssi              | Number      | Wireless signal strength (dBm)       |
+| diagnostics#lastUpdated       | DateTime    | When device last sent data to cloud  |
+| diagnostics#lastFetched       | DateTime    | When data was last fetched by binding|
 
 ### Efficiency Group
 
@@ -202,10 +220,23 @@ Number FreeAir_FanExtractRPM "Extract Fan [%.0f rpm]" {channel="freeair:device:l
 // Filter
 Switch FreeAir_FilterSupplyFull "Supply Filter Full" {channel="freeair:device:livingroom:filter#filterSupplyFull"}
 Switch FreeAir_FilterExtractFull "Extract Filter Full" {channel="freeair:device:livingroom:filter#filterExtractFull"}
+Number FreeAir_FilterStatusSupply "Supply Filter Status [%s]" {channel="freeair:device:livingroom:filter#filterStatusSupply"}
+Number FreeAir_FilterStatusExtract "Extract Filter Status [%s]" {channel="freeair:device:livingroom:filter#filterStatusExtract"}
+String FreeAir_FilterSupplyDesc "Supply Filter [%s]" {channel="freeair:device:livingroom:filter#filterStatusSupplyDescription"}
+String FreeAir_FilterExtractDesc "Extract Filter [%s]" {channel="freeair:device:livingroom:filter#filterStatusExtractDescription"}
+Number:Time FreeAir_FilterHours "Filter Hours [%.0f h]" {channel="freeair:device:livingroom:filter#filterHours"}
 
 // Control
 Number FreeAir_ComfortLevel "Comfort Level [%d]" {channel="freeair:device:livingroom:control#comfortLevel"}
 String FreeAir_OperationMode "Operation Mode [%s]" {channel="freeair:device:livingroom:control#operationMode"}
+
+// Diagnostics
+Number FreeAir_ErrorState "Error State [%d]" {channel="freeair:device:livingroom:diagnostics#errorState"}
+String FreeAir_ErrorText "Error [%s]" {channel="freeair:device:livingroom:diagnostics#errorText"}
+Number:Time FreeAir_OperatingHours "Operating Hours [%.0f h]" {channel="freeair:device:livingroom:diagnostics#operatingHours"}
+Number FreeAir_RSSI "Signal Strength [%d dBm]" {channel="freeair:device:livingroom:diagnostics#rssi"}
+DateTime FreeAir_LastUpdated "Last Cloud Update [%1$tY-%1$tm-%1$td %1$tH:%1$tM]" {channel="freeair:device:livingroom:diagnostics#lastUpdated"}
+DateTime FreeAir_LastFetched "Last Fetch [%1$tY-%1$tm-%1$td %1$tH:%1$tM]" {channel="freeair:device:livingroom:diagnostics#lastFetched"}
 
 // Efficiency
 Number:Power FreeAir_EnergySavings "Energy Savings [%.0f W]" {channel="freeair:device:livingroom:efficiency#energySavings"}
@@ -235,10 +266,23 @@ sitemap freeair label="FreeAir Ventilation" {
     Frame label="Filter Status" {
         Text item=FreeAir_FilterSupplyFull
         Text item=FreeAir_FilterExtractFull
+        Text item=FreeAir_FilterStatusSupply
+        Text item=FreeAir_FilterStatusExtract
+        Text item=FreeAir_FilterSupplyDesc
+        Text item=FreeAir_FilterExtractDesc
+        Text item=FreeAir_FilterHours
     }
     Frame label="Control" {
         Setpoint item=FreeAir_ComfortLevel minValue=1 maxValue=5 step=1
         Selection item=FreeAir_OperationMode mappings=["comfort"="Comfort", "sleep"="Sleep", "turbo"="Turbo", "turbo_cool"="Turbo Cool"]
+    }
+    Frame label="Diagnostics" {
+        Text item=FreeAir_ErrorState
+        Text item=FreeAir_ErrorText
+        Text item=FreeAir_OperatingHours
+        Text item=FreeAir_RSSI
+        Text item=FreeAir_LastUpdated
+        Text item=FreeAir_LastFetched
     }
     Frame label="Efficiency" {
         Text item=FreeAir_EnergySavings
