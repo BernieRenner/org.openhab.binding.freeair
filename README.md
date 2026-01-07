@@ -243,6 +243,8 @@ sitemap freeair label="FreeAir Ventilation" {
 }
 ```
 
+![Sitemap Sample](Sitemap.Sample.png)
+
 ## Troubleshooting
 
 ### "Illegal key size" error
