@@ -3,6 +3,10 @@
 This binding integrates bluMartin FreeAir ventilation systems with openHAB via the FreeAir Connect cloud service.
 It allows monitoring of temperatures, humidity, CO2, air pressure, fan speeds, filter status, and control of ventilation modes.
 
+This is an example of items in a sitemap:
+
+![Sitemap Sample](sitemap.sample.png)
+
 ## Prerequisites
 
 ### FreeAir Connect Registration
@@ -243,7 +247,6 @@ sitemap freeair label="FreeAir Ventilation" {
 }
 ```
 
-![Sitemap Sample](Sitemap.Sample.png)
 
 ## Troubleshooting
 
