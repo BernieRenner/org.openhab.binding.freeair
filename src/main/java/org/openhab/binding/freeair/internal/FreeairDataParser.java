@@ -259,9 +259,18 @@ public class FreeairDataParser {
         int filterHours = lowPlusHighSuper(data[16] & 0xFF, data[17] & 0xFF, filterHoursSuperHigh);
         deviceData.setFilterHours(filterHours);
 
-        // Calculate filter status from RPM
-        deviceData.setFilterStatusSupply(calculateFilterStatus(fanSpeedSupply, fanSpeed, FILTER_RPMS_SUPPLY));
-        deviceData.setFilterStatusExtract(calculateFilterStatus(fanSpeedExtract, fanSpeed, FILTER_RPMS_EXTRACT));
+        // Calculate filter status from RPM, but respect the device's "full" flag
+        Integer supplyStatus = calculateFilterStatus(fanSpeedSupply, fanSpeed, FILTER_RPMS_SUPPLY);
+        if (deviceData.isFilterSupplyFull()) {
+            supplyStatus = 4; // Device says it's full, override calculated value
+        }
+        deviceData.setFilterStatusSupply(supplyStatus);
+
+        Integer extractStatus = calculateFilterStatus(fanSpeedExtract, fanSpeed, FILTER_RPMS_EXTRACT);
+        if (deviceData.isFilterExtractFull()) {
+            extractStatus = 4; // Device says it's full, override calculated value
+        }
+        deviceData.setFilterStatusExtract(extractStatus);
 
         // Feature flags - individual bits
         deviceData.setHumidityReductionMode(((data[37] & 0xFF) >> 5 & 0x01) == 1);
@@ -359,7 +368,9 @@ public class FreeairDataParser {
 
     /**
      * Calculate filter status based on fan RPM and lookup table.
-     * Returns 0-4 scale (0=empty, 4=full) or null if not determinable.
+     * Returns 1-4 scale (1=new, 4=full) or null if not determinable.
+     * Note: When RPM is below baseline threshold, we cannot determine filter status
+     * (the original JS returns 100 as a sentinel value for this case).
      */
     private @Nullable Integer calculateFilterStatus(int fanRpm, int fanSpeed, int[][] filterRpms) {
         int fanSpeedPercent = fanSpeed * 10;
@@ -371,7 +382,8 @@ public class FreeairDataParser {
 
             int diff = entry[2] - entry[1];
             if (fanRpm < entry[1] - diff / 2) {
-                return 0;
+                // RPM too low to determine filter status (JS returns 100 here)
+                return null;
             }
             if (fanRpm < entry[1] + diff * 0.4) {
                 return 1;

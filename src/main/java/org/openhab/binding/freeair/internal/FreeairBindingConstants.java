@@ -101,6 +101,8 @@ public class FreeairBindingConstants {
     public static final String CHANNEL_ERROR_TEXT = GROUP_DIAGNOSTICS + "#errorText";
     public static final String CHANNEL_OPERATING_HOURS = GROUP_DIAGNOSTICS + "#operatingHours";
     public static final String CHANNEL_RSSI = GROUP_DIAGNOSTICS + "#rssi";
+    public static final String CHANNEL_LAST_UPDATED = GROUP_DIAGNOSTICS + "#lastUpdated";
+    public static final String CHANNEL_LAST_FETCHED = GROUP_DIAGNOSTICS + "#lastFetched";
 
     // Channel IDs - Efficiency (with group prefix)
     public static final String CHANNEL_ENERGY_SAVINGS = GROUP_EFFICIENCY + "#energySavings";
@@ -139,11 +141,12 @@ public class FreeairBindingConstants {
     );
 
     // Filter status description mappings (code -> description)
+    // Scale is 1-4: 1=new, 2=light, 3=moderate, 4=full
+    // null means RPM too low to determine (fan off or very low speed)
     public static final Map<Integer, String> FILTER_STATUS_DESCRIPTION_MAP = Map.of(
-            0, "Filter is clean - fan RPM is below the baseline threshold",
-            1, "Filter is slightly dirty (~0-40% of range)",
-            2, "Filter is moderately dirty (~40-70% of range)",
-            3, "Filter is getting full (~70-95% of range)",
+            1, "Filter is clean (~0-40% of expected RPM range)",
+            2, "Filter is lightly used (~40-70% of range)",
+            3, "Filter is moderately dirty (~70-95% of range)",
             4, "Filter needs replacement (>95% of range)"
     );
 }

@@ -97,6 +97,10 @@ public class FreeairConsoleTest {
             printChannel("filterExtractFull", data.isFilterExtractFull() ? "ON" : "OFF", "Switch");
             printChannel("filterStatusSupply", formatFilterStatus(data.getFilterStatusSupply()), "Number");
             printChannel("filterStatusExtract", formatFilterStatus(data.getFilterStatusExtract()), "Number");
+            printChannel("filterStatusSupplyDescription", formatFilterStatusDesc(data.getFilterStatusSupply()),
+                    "String");
+            printChannel("filterStatusExtractDescription", formatFilterStatusDesc(data.getFilterStatusExtract()),
+                    "String");
             printChannel("filterHours", data.getFilterHours() + " h", "Number:Time");
 
             // Channel Group: control
@@ -129,7 +133,9 @@ public class FreeairConsoleTest {
             printChannel("errorLineNbr", String.valueOf(data.getErrorLineNbr()), "Number (internal)");
             printChannel("errorCode", String.valueOf(data.getErrorCode()), "Number (internal)");
             printChannel("operatingHours", data.getOperatingHours() + " h", "Number:Time");
-            printChannel("rssi", data.getRssi() + " dBm", "Number:Power");
+            printChannel("rssi", data.getRssi() + " dBm", "Number");
+            printChannel("lastUpdated", data.getTimestamp() + " (cloud)", "DateTime");
+            printChannel("lastFetched", "(current time)", "DateTime");
 
             // Channel Group: efficiency
             printChannelGroup("efficiency");
@@ -139,7 +145,7 @@ public class FreeairConsoleTest {
             System.out.println();
             System.out.println("===========================================");
             System.out.println("Test completed successfully!");
-            System.out.println("Total Channels: 25");
+            System.out.println("Total Channels: 31");
             System.out.println("===========================================");
 
         } catch (FreeairCommunicationException e) {
@@ -186,9 +192,18 @@ public class FreeairConsoleTest {
 
     private static String formatFilterStatus(Integer status) {
         if (status == null) {
-            return "N/A";
+            return "N/A (RPM too low to determine)";
         }
-        String[] labels = { "Empty", "Low", "Medium", "High", "Full" };
-        return status + "/4 (" + (status < labels.length ? labels[status] : "?") + ")";
+        // Scale is 1-4: 1=new, 2=light, 3=moderate, 4=full
+        String[] labels = { "", "New", "Light", "Moderate", "Full" };
+        String label = (status >= 1 && status <= 4) ? labels[status] : "?";
+        return status + "/4 (" + label + ")";
+    }
+
+    private static String formatFilterStatusDesc(Integer status) {
+        if (status == null) {
+            return "Cannot determine - fan RPM too low";
+        }
+        return FreeairBindingConstants.FILTER_STATUS_DESCRIPTION_MAP.getOrDefault(status, "Unknown");
     }
 }

@@ -240,6 +240,14 @@
 				<label>Signal Strength</label>
 				<description>Wireless signal strength</description>
 			</channel>
+			<channel id="lastUpdated" typeId="last-updated">
+				<label>Last Updated (Cloud)</label>
+				<description>When the device last sent data to the cloud</description>
+			</channel>
+			<channel id="lastFetched" typeId="last-fetched">
+				<label>Last Fetched</label>
+				<description>When data was last fetched from the cloud</description>
+			</channel>
 		</channels>
 	</channel-group-type>
 
@@ -324,14 +332,13 @@
 	<channel-type id="filter-status">
 		<item-type>Number</item-type>
 		<label>Filter Status</label>
-		<description>Filter condition (0=new, 4=full)</description>
+		<description>Filter condition (1=new, 4=full)</description>
 		<category>QualityOfService</category>
-		<state readOnly="true" min="0" max="4">
+		<state readOnly="true" min="1" max="4">
 			<options>
-				<option value="0">New</option>
-				<option value="1">Light</option>
-				<option value="2">Moderate</option>
-				<option value="3">Heavy</option>
+				<option value="1">New</option>
+				<option value="2">Light</option>
+				<option value="3">Moderate</option>
 				<option value="4">Full</option>
 			</options>
 		</state>
@@ -430,6 +437,22 @@
 		<label>Heat Recovery</label>
 		<category>Energy</category>
 		<state readOnly="true" pattern="%.0f %%"/>
+	</channel-type>
+
+	<channel-type id="last-updated">
+		<item-type>DateTime</item-type>
+		<label>Last Updated</label>
+		<description>When the device last sent data to the cloud</description>
+		<category>Time</category>
+		<state readOnly="true"/>
+	</channel-type>
+
+	<channel-type id="last-fetched">
+		<item-type>DateTime</item-type>
+		<label>Last Fetched</label>
+		<description>When data was last fetched from the cloud</description>
+		<category>Time</category>
+		<state readOnly="true"/>
 	</channel-type>
 
 </thing:thing-descriptions>

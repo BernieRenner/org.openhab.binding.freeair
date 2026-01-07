@@ -14,12 +14,18 @@ package org.openhab.binding.freeair.internal;
 
 import static org.openhab.binding.freeair.internal.FreeairBindingConstants.*;
 
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.Map;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
+import org.openhab.core.library.types.DateTimeType;
 import org.openhab.core.library.types.DecimalType;
 import org.openhab.core.library.types.OnOffType;
 import org.openhab.core.library.types.QuantityType;
@@ -259,6 +265,24 @@ public class FreeairHandler extends BaseThingHandler {
         updateState(CHANNEL_ERROR_TEXT, new StringType(errorText));
         updateState(CHANNEL_OPERATING_HOURS, new QuantityType<>(data.getOperatingHours(), Units.HOUR));
         updateState(CHANNEL_RSSI, new DecimalType(data.getRssi()));
+
+        // Timestamp channels
+        // Last updated (from cloud) - parse the timestamp from device data
+        String cloudTimestamp = data.getTimestamp();
+        if (cloudTimestamp != null && !cloudTimestamp.isEmpty()) {
+            try {
+                // Format from API: "YYYY-MM-DD HH:MM:SS"
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+                LocalDateTime localDateTime = LocalDateTime.parse(cloudTimestamp, formatter);
+                ZonedDateTime zonedDateTime = localDateTime.atZone(ZoneId.systemDefault());
+                updateState(CHANNEL_LAST_UPDATED, new DateTimeType(zonedDateTime));
+            } catch (DateTimeParseException e) {
+                logger.debug("Failed to parse cloud timestamp '{}': {}", cloudTimestamp, e.getMessage());
+            }
+        }
+
+        // Last fetched (local time when we fetched)
+        updateState(CHANNEL_LAST_FETCHED, new DateTimeType(ZonedDateTime.now()));
 
         // Efficiency channels
         updateState(CHANNEL_ENERGY_SAVINGS, new QuantityType<>(data.getEnergySavings(), Units.WATT));
